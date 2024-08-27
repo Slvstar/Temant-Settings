@@ -1,0 +1,11 @@
+{
+    "autoload": {
+        "psr-4": {
+            "Temant\\SettingsManager\\": "Src/"
+        }
+    },
+    "require": {
+        "doctrine/orm": "^3.2",
+        "symfony/cache": "*"
+    }
+}
