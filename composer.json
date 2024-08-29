@@ -7,5 +7,8 @@
     "require": {
         "doctrine/orm": "^3.2",
         "symfony/cache": "*"
+    },
+    "require-dev": {
+        "symfony/var-dumper": "*"
     }
 }
