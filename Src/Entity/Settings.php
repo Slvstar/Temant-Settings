@@ -4,10 +4,11 @@ namespace Temant\SettingsManager\Entity;
 
 use Doctrine\ORM\Mapping as ORM;
 use Doctrine\DBAL\Types\Types;
+use Stringable;
 use Temant\SettingsManager\Enum\SettingType;
 
 #[ORM\Entity]
-class Settings
+class Settings implements Stringable
 {
     #[ORM\Id]
     #[ORM\Column(type: Types::STRING, length: 255, unique: true)]
@@ -86,5 +87,13 @@ class Settings
     public function getUpdatedAt(): ?\DateTimeImmutable
     {
         return $this->updatedAt;
+    }
+
+    /**
+     * @inheritDoc
+     */
+    public function __tostring(): string
+    {
+        return $this->value;
     }
 }
