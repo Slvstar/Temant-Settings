@@ -3,38 +3,56 @@
 namespace Temant\SettingsManager {
 
     use Doctrine\ORM\EntityManagerInterface;
-    use Doctrine\ORM\Tools\SchemaTool;
     use Temant\SettingsManager\Entity\Setting;
     use Temant\SettingsManager\Enum\SettingType;
-    use RuntimeException;
     use Temant\SettingsManager\Exception\SettingAlreadyExistsException;
     use Temant\SettingsManager\Exception\SettingNotFoundException;
-    use Throwable;
+    use Temant\SettingsManager\Initialization\SettingsTableInitializer;
 
     /**
      * SettingsManager is responsible for managing application settings,
-     * including adding, retrieving, setting, updating, and deleting settings.
+     * including adding, retrieving, updating, and deleting settings.
      */
     final readonly class SettingsManager
     {
-        public function __construct(
-            private EntityManagerInterface $entityManager,
-            private string $tableName = "settings"
-        ) {
-            $this->initializeSettingsTable();
+        /**
+         * @var EntityManagerInterface The Doctrine entity manager.
+         */
+        private EntityManagerInterface $entityManager;
+
+        /**
+         * @var string The name of the settings table in the database.
+         */
+        private string $tableName;
+
+        /**
+         * Constructor for SettingsManager.
+         *
+         * @param EntityManagerInterface $entityManager The Doctrine entity manager.
+         * @param string $tableName The name of the settings table. Default is "settings".
+         */
+        public function __construct(EntityManagerInterface $entityManager, string $tableName = "settings")
+        {
+            $this->entityManager = $entityManager;
+            $this->tableName = $tableName;
+
+            $initializer = new SettingsTableInitializer($entityManager, $tableName);
+            $initializer->initialize();
         }
+
+        // Public Methods (API)
 
         /**
          * Adds a new setting. Throws an exception if the setting already exists.
          *
-         * @param string $name The name of the setting to add.
+         * @param string $name The name of the setting.
          * @param SettingType $type The type of the setting value.
-         * @param mixed $value The value to set.
-         * @throws SettingAlreadyExistsException if the setting already exists.
+         * @param mixed $value The value of the setting.
+         * @throws SettingAlreadyExistsException If the setting already exists.
          */
         public function add(string $name, SettingType $type, mixed $value): void
         {
-            if ($this->getSetting($name)) {
+            if ($this->exists($name)) {
                 throw new SettingAlreadyExistsException("A setting with the name '$name' already exists.");
             }
 
@@ -46,7 +64,7 @@ namespace Temant\SettingsManager {
         /**
          * Sets or updates a setting value. Creates the setting if it doesn't exist.
          *
-         * @param string $name The name of the setting to set.
+         * @param string $name The name of the setting.
          * @param SettingType $type The type of the setting value.
          * @param mixed $value The value to set.
          */
@@ -70,9 +88,9 @@ namespace Temant\SettingsManager {
         /**
          * Updates an existing setting. Throws an exception if the setting does not exist.
          *
-         * @param string $name The name of the setting to update.
-         * @param mixed $value The new value to set.
-         * @throws SettingNotFoundException if the setting does not exist.
+         * @param string $name The name of the setting.
+         * @param mixed $value The new value of the setting.
+         * @throws SettingNotFoundException If the setting does not exist.
          */
         public function update(string $name, mixed $value): void
         {
@@ -87,14 +105,14 @@ namespace Temant\SettingsManager {
         }
 
         /**
-         * Retrieves a setting value by its key.
+         * Retrieves a setting by its key.
          *
-         * @param string $key The key for the desired setting.
-         * @return Setting|null The value of the setting if found, or null if the key does not exist.
+         * @param string $key The key of the desired setting.
+         * @return Setting|null The setting entity, or null if not found.
          */
         public function get(string $key): ?Setting
         {
-            return $this->getSetting($key) ?? null;
+            return $this->getSetting($key);
         }
 
         /**
@@ -109,36 +127,6 @@ namespace Temant\SettingsManager {
         }
 
         /**
-         * Removes a setting by its key.
-         *
-         * @param string $key The key of the setting to be removed.
-         */
-        public function remove(string $key): void
-        {
-            $this->removeSetting($key);
-        }
-
-        /**
-         * Initializes the settings table in the database.
-         */
-        private function initializeSettingsTable(): void
-        {
-            try {
-                $metadata = $this->entityManager->getClassMetadata(Setting::class);
-                $schemaTool = new SchemaTool($this->entityManager);
-                $schemaManager = $this->entityManager->getConnection()->createSchemaManager();
-
-                $metadata->setTableName($this->tableName);
-
-                if (!$schemaManager->tablesExist([$metadata->getTableName()])) {
-                    $schemaTool->createSchema([$metadata]);
-                }
-            } catch (Throwable $e) {
-                throw new RuntimeException('An error occurred during settings table initialization: ' . $e->getMessage());
-            }
-        }
-
-        /**
          * Retrieves all settings from the database.
          *
          * @return Setting[] An array of all settings.
@@ -150,7 +138,17 @@ namespace Temant\SettingsManager {
                 ->findAll();
         }
 
-        // Additional internal methods
+        /**
+         * Removes a setting by its key.
+         *
+         * @param string $key The key of the setting to remove.
+         */
+        public function remove(string $key): void
+        {
+            $this->removeSetting($key);
+        }
+
+        // Private/Internal Methods 
 
         /**
          * Retrieves a setting by its name.
