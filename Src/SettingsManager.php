@@ -4,9 +4,9 @@ namespace Temant\SettingsManager {
 
     use Doctrine\ORM\EntityManagerInterface;
     use Doctrine\ORM\Tools\SchemaTool;
+    use Temant\SettingsManager\Contract\SettingsInterface;
     use Temant\SettingsManager\Entity\Settings;
     use Temant\SettingsManager\Enum\SettingType;
-    use Temant\SettingsManager\Contract\SettingsInterface;
     use RuntimeException;
     use Throwable;
 
@@ -89,9 +89,9 @@ namespace Temant\SettingsManager {
          * Retrieves a setting value by its key.
          *
          * @param string $key The key for the desired setting.
-         * @return mixed The value of the setting if found, or null if the key does not exist.
+         * @return Settings|null The value of the setting if found, or null if the key does not exist.
          */
-        public function get(string $key): mixed
+        public function get(string $key): ?Settings
         {
             $setting = $this->getSetting($key);
             return $setting ?? null;
