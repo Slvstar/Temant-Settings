@@ -8,7 +8,7 @@ use Stringable;
 use Temant\SettingsManager\Enum\SettingType;
 
 #[ORM\Entity]
-class Settings implements Stringable
+class Setting implements Stringable
 {
     #[ORM\Id]
     #[ORM\Column(type: Types::STRING, length: 255, unique: true)]

@@ -4,17 +4,18 @@ namespace Temant\SettingsManager {
 
     use Doctrine\ORM\EntityManagerInterface;
     use Doctrine\ORM\Tools\SchemaTool;
-    use Temant\SettingsManager\Contract\SettingsInterface;
-    use Temant\SettingsManager\Entity\Settings;
+    use Temant\SettingsManager\Entity\Setting;
     use Temant\SettingsManager\Enum\SettingType;
     use RuntimeException;
+    use Temant\SettingsManager\Exception\SettingAlreadyExistsException;
+    use Temant\SettingsManager\Exception\SettingNotFoundException;
     use Throwable;
 
     /**
      * SettingsManager is responsible for managing application settings,
      * including adding, retrieving, setting, updating, and deleting settings.
      */
-    final readonly class SettingsManager implements SettingsInterface
+    final readonly class SettingsManager
     {
         public function __construct(
             private EntityManagerInterface $entityManager,
@@ -29,15 +30,15 @@ namespace Temant\SettingsManager {
          * @param string $name The name of the setting to add.
          * @param SettingType $type The type of the setting value.
          * @param mixed $value The value to set.
-         * @throws \RuntimeException if the setting already exists.
+         * @throws SettingAlreadyExistsException if the setting already exists.
          */
         public function add(string $name, SettingType $type, mixed $value): void
         {
             if ($this->getSetting($name)) {
-                throw new RuntimeException("A setting with the name '$name' already exists.");
+                throw new SettingAlreadyExistsException("A setting with the name '$name' already exists.");
             }
 
-            $setting = new Settings($name, $type, $value);
+            $setting = new Setting($name, $type, $value);
             $this->entityManager->persist($setting);
             $this->entityManager->flush();
         }
@@ -59,7 +60,7 @@ namespace Temant\SettingsManager {
                 $setting->setValue($value);
             } else {
                 // Create a new setting
-                $setting = new Settings($name, $type, $value);
+                $setting = new Setting($name, $type, $value);
                 $this->entityManager->persist($setting);
             }
 
@@ -71,14 +72,14 @@ namespace Temant\SettingsManager {
          *
          * @param string $name The name of the setting to update.
          * @param mixed $value The new value to set.
-         * @throws \RuntimeException if the setting does not exist.
+         * @throws SettingNotFoundException if the setting does not exist.
          */
         public function update(string $name, mixed $value): void
         {
             $setting = $this->getSetting($name);
 
             if (!$setting) {
-                throw new RuntimeException("Cannot update. No setting found with the name '$name'.");
+                throw new SettingNotFoundException("Cannot update. No setting found with the name '$name'.");
             }
 
             $setting->setValue($value);
@@ -89,12 +90,11 @@ namespace Temant\SettingsManager {
          * Retrieves a setting value by its key.
          *
          * @param string $key The key for the desired setting.
-         * @return Settings|null The value of the setting if found, or null if the key does not exist.
+         * @return Setting|null The value of the setting if found, or null if the key does not exist.
          */
-        public function get(string $key): ?Settings
+        public function get(string $key): ?Setting
         {
-            $setting = $this->getSetting($key);
-            return $setting ?? null;
+            return $this->getSetting($key) ?? null;
         }
 
         /**
@@ -124,7 +124,7 @@ namespace Temant\SettingsManager {
         private function initializeSettingsTable(): void
         {
             try {
-                $metadata = $this->entityManager->getClassMetadata(Settings::class);
+                $metadata = $this->entityManager->getClassMetadata(Setting::class);
                 $schemaTool = new SchemaTool($this->entityManager);
                 $schemaManager = $this->entityManager->getConnection()->createSchemaManager();
 
@@ -132,17 +132,6 @@ namespace Temant\SettingsManager {
 
                 if (!$schemaManager->tablesExist([$metadata->getTableName()])) {
                     $schemaTool->createSchema([$metadata]);
-                }
-
-                $defaultSettings = [
-                    ['site_name', SettingType::STRING, 'Default Site Name'],
-                    ['admin_email', SettingType::STRING, 'admin@example.com'],
-                ];
-
-                foreach ($defaultSettings as [$name, $type, $value]) {
-                    if ($this->getSetting($name) === null) {
-                        $this->set($name, $type, $value);
-                    }
                 }
             } catch (Throwable $e) {
                 throw new RuntimeException('An error occurred during settings table initialization: ' . $e->getMessage());
@@ -152,11 +141,13 @@ namespace Temant\SettingsManager {
         /**
          * Retrieves all settings from the database.
          *
-         * @return Settings[] An array of all settings.
+         * @return Setting[] An array of all settings.
          */
         public function all(): array
         {
-            return $this->entityManager->getRepository(Settings::class)->findAll();
+            return $this->entityManager
+                ->getRepository(Setting::class)
+                ->findAll();
         }
 
         // Additional internal methods
@@ -165,11 +156,13 @@ namespace Temant\SettingsManager {
          * Retrieves a setting by its name.
          *
          * @param string $name The name of the setting to retrieve.
-         * @return Settings|null The setting entity, or null if not found.
+         * @return Setting|null The setting entity, or null if not found.
          */
-        private function getSetting(string $name): ?Settings
+        private function getSetting(string $name): ?Setting
         {
-            return $this->entityManager->getRepository(Settings::class)->findOneBy(['name' => $name]);
+            return $this->entityManager
+                ->getRepository(Setting::class)
+                ->findOneBy(['name' => $name]);
         }
 
         /**
@@ -179,9 +172,7 @@ namespace Temant\SettingsManager {
          */
         private function removeSetting(string $name): void
         {
-            $setting = $this->getSetting($name);
-
-            if ($setting) {
+            if ($setting = $this->getSetting($name)) {
                 $this->entityManager->remove($setting);
                 $this->entityManager->flush();
             }
@@ -200,7 +191,7 @@ namespace Temant\SettingsManager {
                 is_bool($value) => SettingType::BOOLEAN,
                 is_float($value) => SettingType::FLOAT,
                 is_string($value) => SettingType::STRING,
-                default => SettingType::STRING,
+                default => SettingType::STRING
             };
         }
     }
