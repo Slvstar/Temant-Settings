@@ -1,6 +1,7 @@
 <?php declare(strict_types=1);
 
 namespace Temant\SettingsManager\Contract {
+    use Temant\SettingsManager\Entity\Settings;
     use Temant\SettingsManager\Enum\SettingType;
 
     /**
@@ -40,9 +41,9 @@ namespace Temant\SettingsManager\Contract {
          * Retrieves a setting value by its key.
          *
          * @param string $key The key for the desired setting.
-         * @return mixed The value of the setting if found, or null if the key does not exist.
+         * @return Settings|null The value of the setting if found, or null if the key does not exist.
          */
-        public function get(string $key): mixed;
+        public function get(string $key): ?Settings;
 
         /**
          * Checks if a setting exists by its key.
