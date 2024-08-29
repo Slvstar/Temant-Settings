@@ -16,27 +16,16 @@ namespace Temant\SettingsManager {
     final readonly class SettingsManager
     {
         /**
-         * @var EntityManagerInterface The Doctrine entity manager.
-         */
-        private EntityManagerInterface $entityManager;
-
-        /**
-         * @var string The name of the settings table in the database.
-         */
-        private string $tableName;
-
-        /**
          * Constructor for SettingsManager.
          *
          * @param EntityManagerInterface $entityManager The Doctrine entity manager.
          * @param string $tableName The name of the settings table. Default is "settings".
          */
-        public function __construct(EntityManagerInterface $entityManager, string $tableName = "settings")
-        {
-            $this->entityManager = $entityManager;
-            $this->tableName = $tableName;
-
-            $initializer = new SettingsTableInitializer($entityManager, $tableName);
+        public function __construct(
+            private EntityManagerInterface $entityManager,
+            private string $tableName = "settings"
+        ) {
+            $initializer = new SettingsTableInitializer($this->entityManager, $this->tableName);
             $initializer->initialize();
         }
 
@@ -174,23 +163,6 @@ namespace Temant\SettingsManager {
                 $this->entityManager->remove($setting);
                 $this->entityManager->flush();
             }
-        }
-
-        /**
-         * Determines the appropriate SettingType for a given value.
-         *
-         * @param mixed $value The value to determine the type for.
-         * @return SettingType The determined SettingType.
-         */
-        private function determineType(mixed $value): SettingType
-        {
-            return match (true) {
-                is_int($value) => SettingType::INTEGER,
-                is_bool($value) => SettingType::BOOLEAN,
-                is_float($value) => SettingType::FLOAT,
-                is_string($value) => SettingType::STRING,
-                default => SettingType::STRING
-            };
         }
     }
 }

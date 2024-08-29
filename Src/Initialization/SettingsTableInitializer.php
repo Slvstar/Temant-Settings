@@ -12,28 +12,18 @@ namespace Temant\SettingsManager\Initialization {
      * SettingsTableInitializer is responsible for ensuring that the settings table
      * exists in the database and initializing it if necessary.
      */
-    class SettingsTableInitializer
+    final class SettingsTableInitializer
     {
-        /**
-         * @var EntityManagerInterface The Doctrine entity manager responsible for database operations.
-         */
-        private EntityManagerInterface $entityManager;
-
-        /**
-         * @var string The name of the settings table in the database.
-         */
-        private string $tableName;
-
         /**
          * Constructor for SettingsTableInitializer.
          *
          * @param EntityManagerInterface $entityManager The Doctrine entity manager.
          * @param string $tableName The name of the settings table. Defaults to "settings".
          */
-        public function __construct(EntityManagerInterface $entityManager, string $tableName = "settings")
-        {
-            $this->entityManager = $entityManager;
-            $this->tableName = $tableName;
+        public function __construct(
+            private EntityManagerInterface $entityManager,
+            private string $tableName = "settings"
+        ) {
         }
 
         /**

@@ -9,6 +9,7 @@
         "symfony/cache": "*"
     },
     "require-dev": {
-        "symfony/var-dumper": "*"
+        "symfony/var-dumper": "*",
+        "phpstan/phpstan": "^1.12"
     }
 }

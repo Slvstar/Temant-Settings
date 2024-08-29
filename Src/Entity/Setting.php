@@ -2,12 +2,12 @@
 
 namespace Temant\SettingsManager\Entity;
 
+use Stringable;
+use DateTimeImmutable;
 use Doctrine\ORM\Mapping as ORM;
 use Doctrine\DBAL\Types\Types;
-use Stringable;
 use Temant\SettingsManager\Enum\SettingType;
 use Temant\SettingsManager\Exception\SettingTypeMismatchException;
-use DateTimeImmutable;
 
 #[ORM\Entity]
 class Setting implements Stringable
@@ -24,10 +24,10 @@ class Setting implements Stringable
     /**
      * The value of the setting.
      * 
-     * @var string|null
+     * @var string
      */
-    #[ORM\Column(type: Types::TEXT, nullable: true)]
-    private ?string $value = null;
+    #[ORM\Column(type: Types::TEXT)]
+    private string $value;
 
     /**
      * The type of the setting (e.g., string, integer, boolean).
@@ -119,7 +119,7 @@ class Setting implements Stringable
         $expectedType = $this->getType();
         $this->validateType($expectedType, $value);
 
-        $this->value = match ($expectedType) {
+        $this->value = (string) match ($expectedType) {
             SettingType::STRING, SettingType::INTEGER, SettingType::BOOLEAN, SettingType::FLOAT => (string) $value,
             SettingType::JSON => json_encode($value),
         };
