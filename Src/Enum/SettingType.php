@@ -8,7 +8,6 @@ namespace Temant\SettingsManager\Enum {
         case INTEGER = 'integer';
         case BOOLEAN = 'boolean';
         case FLOAT = 'float';
-        case ARRAY = 'array';
         case JSON = 'json';
     }
 }

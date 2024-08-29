@@ -3,7 +3,7 @@
 namespace Temant\SettingsManager;
 
 use Doctrine\ORM\EntityManagerInterface;
-use Doctrine\ORM\Tools\SchemaTool; 
+use Doctrine\ORM\Tools\SchemaTool;
 use Doctrine\DBAL\Schema\SchemaException;
 use Temant\SettingsManager\Entity\Settings;
 use Temant\SettingsManager\Enum\SettingType;
@@ -16,7 +16,8 @@ use Temant\SettingsManager\Contract\SettingsInterface;
 final readonly class SettingsManager implements SettingsInterface
 {
     public function __construct(
-        private EntityManagerInterface $entityManager
+        private EntityManagerInterface $entityManager,
+        private string $tableName = "settings"
     ) {
         $this->initializeSettingsTable();
     }
@@ -126,6 +127,8 @@ final readonly class SettingsManager implements SettingsInterface
             $schemaTool = new SchemaTool($this->entityManager);
             $schemaManager = $this->entityManager->getConnection()->createSchemaManager();
 
+            $metadata->setTableName($this->tableName);
+
             if (!$schemaManager->tablesExist([$metadata->getTableName()])) {
                 $schemaTool->createSchema([$metadata]);
             }
@@ -197,7 +200,6 @@ final readonly class SettingsManager implements SettingsInterface
             is_int($value) => SettingType::INTEGER,
             is_bool($value) => SettingType::BOOLEAN,
             is_float($value) => SettingType::FLOAT,
-            is_array($value) => SettingType::ARRAY ,
             is_string($value) => SettingType::STRING,
             default => SettingType::STRING,
         };
