@@ -11,16 +11,11 @@ require_once __DIR__ . "/vendor/autoload.php";
 $config = ORMSetup::createAttributeMetadataConfiguration(
     [__DIR__ . "/Src/Entity"],
     false
-);
-
-$config->setAutoGenerateProxyClasses(true);
+); 
 
 $connection = DriverManager::getConnection([
-    'driver' => 'pdo_mysql',
-    'host' => 'localhost',
-    'user' => 'intradb',
-    'password' => 'Proto!728agt22Ws',
-    'dbname' => 'intradb'
+    'driver' => 'pdo_sqlite',
+    'path' => __DIR__ . '/db.sqlite',
 ], $config);
 
 $entityManager = new EntityManager($connection, $config);

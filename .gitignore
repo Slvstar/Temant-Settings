@@ -1,3 +1,4 @@
+.git
+.phpunit.result.cache
 vendor
 composer.lock
-.git
