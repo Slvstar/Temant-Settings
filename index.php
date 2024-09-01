@@ -14,8 +14,11 @@ $config = ORMSetup::createAttributeMetadataConfiguration(
 ); 
 
 $connection = DriverManager::getConnection([
-    'driver' => 'pdo_sqlite',
-    'path' => __DIR__ . '/db.sqlite',
+    'driver' => 'pdo_mysql',
+    'host' => 'localhost',
+    'user' => 'intradb',
+    'password' => 'Proto!728agt22Ws',
+    'dbname' => 'intradb'
 ], $config);
 
 $entityManager = new EntityManager($connection, $config);
