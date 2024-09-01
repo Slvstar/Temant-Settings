@@ -2,14 +2,16 @@
 
 namespace Temant\SettingsManager\Entity;
 
+use Doctrine\ORM\Mapping\Entity;
+use Doctrine\ORM\Mapping\Id;
+use Doctrine\ORM\Mapping\Column;
 use Stringable;
 use DateTimeImmutable;
-use Doctrine\ORM\Mapping as ORM;
 use Doctrine\DBAL\Types\Types;
 use Temant\SettingsManager\Enum\SettingType;
 use Temant\SettingsManager\Exception\SettingTypeMismatchException;
 
-#[ORM\Entity]
+#[Entity]
 class Setting implements Stringable
 {
     /**
@@ -17,8 +19,8 @@ class Setting implements Stringable
      * 
      * @var string
      */
-    #[ORM\Id]
-    #[ORM\Column(type: Types::STRING, length: 255, unique: true)]
+    #[Id]
+    #[Column(type: Types::STRING, length: 255, unique: true)]
     private string $name;
 
     /**
@@ -26,7 +28,7 @@ class Setting implements Stringable
      * 
      * @var string
      */
-    #[ORM\Column(type: Types::TEXT)]
+    #[Column(type: Types::TEXT)]
     private string $value;
 
     /**
@@ -34,7 +36,7 @@ class Setting implements Stringable
      * 
      * @var string
      */
-    #[ORM\Column(type: Types::STRING, length: 50)]
+    #[Column(type: Types::STRING, length: 50)]
     private string $type;
 
     /**
@@ -42,7 +44,7 @@ class Setting implements Stringable
      * 
      * @var DateTimeImmutable
      */
-    #[ORM\Column(type: Types::DATETIME_IMMUTABLE)]
+    #[Column(type: Types::DATETIME_IMMUTABLE)]
     private DateTimeImmutable $createdAt;
 
     /**
@@ -50,7 +52,7 @@ class Setting implements Stringable
      * 
      * @var DateTimeImmutable|null
      */
-    #[ORM\Column(type: Types::DATETIME_IMMUTABLE, nullable: true)]
+    #[Column(type: Types::DATETIME_IMMUTABLE, nullable: true)]
     private ?DateTimeImmutable $updatedAt = null;
 
     /**
