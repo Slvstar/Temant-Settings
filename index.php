@@ -3,6 +3,7 @@ use Doctrine\DBAL\DriverManager;
 use Doctrine\ORM\EntityManager;
 use Doctrine\ORM\ORMSetup;
 use Temant\SettingsManager\Enum\SettingType;
+use Temant\SettingsManager\Exception\SettingAlreadyExistsException;
 use Temant\SettingsManager\SettingsManager;
 
 require_once __DIR__ . "/vendor/autoload.php";
@@ -31,7 +32,7 @@ $settingsManager = new SettingsManager($entityManager, "Hello");
 try {
     $settingsManager->add('new_setting', SettingType::STRING, 'Initial Value');
     dump("Setting 'new_setting' added successfully.");
-} catch (\RuntimeException $e) {
+} catch (SettingAlreadyExistsException $e) {
     dump("Failed to add 'new_setting': " . $e->getMessage());
 }
 
@@ -59,8 +60,15 @@ if ($settingsManager->exists('site_name')) {
 }
 
 // Remove a setting
-$settingsManager->remove('new_setting');
-dump("Setting 'new_setting' removed successfully.");
+$settingsManager->remove('site_name');
+dump("Setting 'site_name' removed successfully.");
+
+// Check if a setting exists
+if ($settingsManager->exists('site_name')) {
+    dump("'site_name' exists.");
+} else {
+    dump("'site_name' does not exist.");
+}
 
 // Retrieve all settings
 $allSettings = $settingsManager->all();

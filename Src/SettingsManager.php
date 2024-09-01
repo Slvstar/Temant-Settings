@@ -29,17 +29,16 @@ namespace Temant\SettingsManager {
             $initializer->initialize();
         }
 
-        // Public Methods (API)
-
         /**
          * Adds a new setting. Throws an exception if the setting already exists.
          *
          * @param string $name The name of the setting.
          * @param SettingType $type The type of the setting value.
          * @param mixed $value The value of the setting.
+         * @return self Fluent interface, returns the instance of the `SettingsManager`.
          * @throws SettingAlreadyExistsException If the setting already exists.
          */
-        public function add(string $name, SettingType $type, mixed $value): void
+        public function add(string $name, SettingType $type, mixed $value): self
         {
             if ($this->exists($name)) {
                 throw new SettingAlreadyExistsException("A setting with the name '$name' already exists.");
@@ -48,6 +47,8 @@ namespace Temant\SettingsManager {
             $setting = new Setting($name, $type, $value);
             $this->entityManager->persist($setting);
             $this->entityManager->flush();
+
+            return $this;
         }
 
         /**
@@ -56,12 +57,13 @@ namespace Temant\SettingsManager {
          * @param string $name The name of the setting.
          * @param SettingType $type The type of the setting value.
          * @param mixed $value The value to set.
+         * @return self Fluent interface, returns the instance of the `SettingsManager`.
          */
-        public function set(string $name, SettingType $type, mixed $value): void
+        public function set(string $name, SettingType $type, mixed $value): self
         {
-            $setting = $this->getSetting($name);
+            $setting = $this->get($name);
 
-            if ($setting) {
+            if ($setting !== null) {
                 // Update existing setting
                 $setting->setType($type);
                 $setting->setValue($value);
@@ -72,6 +74,8 @@ namespace Temant\SettingsManager {
             }
 
             $this->entityManager->flush();
+
+            return $this;
         }
 
         /**
@@ -79,18 +83,21 @@ namespace Temant\SettingsManager {
          *
          * @param string $name The name of the setting.
          * @param mixed $value The new value of the setting.
+         * @return Setting The updated setting.
          * @throws SettingNotFoundException If the setting does not exist.
          */
-        public function update(string $name, mixed $value): void
+        public function update(string $name, mixed $value): Setting
         {
-            $setting = $this->getSetting($name);
+            $setting = $this->get($name);
 
-            if (!$setting) {
+            if ($setting === null) {
                 throw new SettingNotFoundException("Cannot update. No setting found with the name '$name'.");
             }
 
             $setting->setValue($value);
             $this->entityManager->flush();
+
+            return $setting;
         }
 
         /**
@@ -101,7 +108,9 @@ namespace Temant\SettingsManager {
          */
         public function get(string $key): ?Setting
         {
-            return $this->getSetting($key);
+            return $this->entityManager
+                ->getRepository(Setting::class)
+                ->findOneBy(['name' => $key]);
         }
 
         /**
@@ -112,7 +121,7 @@ namespace Temant\SettingsManager {
          */
         public function exists(string $key): bool
         {
-            return $this->getSetting($key) !== null;
+            return $this->get($key) !== null;
         }
 
         /**
@@ -131,38 +140,21 @@ namespace Temant\SettingsManager {
          * Removes a setting by its key.
          *
          * @param string $key The key of the setting to remove.
+         * @return self Fluent interface, returns the instance of the `SettingsManager`.
+         * @throws SettingNotFoundException If the setting does not exist.
          */
-        public function remove(string $key): void
+        public function remove(string $key): self
         {
-            $this->removeSetting($key);
-        }
+            $setting = $this->get($key);
 
-        // Private/Internal Methods 
-
-        /**
-         * Retrieves a setting by its name.
-         *
-         * @param string $name The name of the setting to retrieve.
-         * @return Setting|null The setting entity, or null if not found.
-         */
-        private function getSetting(string $name): ?Setting
-        {
-            return $this->entityManager
-                ->getRepository(Setting::class)
-                ->findOneBy(['name' => $name]);
-        }
-
-        /**
-         * Removes a setting by its name.
-         *
-         * @param string $name The name of the setting to remove.
-         */
-        private function removeSetting(string $name): void
-        {
-            if ($setting = $this->getSetting($name)) {
-                $this->entityManager->remove($setting);
-                $this->entityManager->flush();
+            if ($setting === null) {
+                throw new SettingNotFoundException("Cannot remove. No setting found with the key '$key'.");
             }
+
+            $this->entityManager->remove($setting);
+            $this->entityManager->flush();
+
+            return $this;
         }
     }
 }
