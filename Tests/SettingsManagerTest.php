@@ -5,8 +5,6 @@ namespace Temant\SettingsManager\Tests;
 use Doctrine\DBAL\DriverManager;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\ORMSetup;
-use Doctrine\ORM\Tools\SchemaTool;
-use Doctrine\ORM\Tools\Setup;
 use Doctrine\ORM\EntityManager;
 use PHPUnit\Framework\TestCase;
 use Temant\SettingsManager\Entity\Setting;
@@ -14,7 +12,6 @@ use Temant\SettingsManager\Enum\SettingType;
 use Temant\SettingsManager\Exception\SettingAlreadyExistsException;
 use Temant\SettingsManager\Exception\SettingNotFoundException;
 use Temant\SettingsManager\SettingsManager;
-use Temant\SettingsManager\Initialization\SettingsTableInitializer;
 
 class SettingsManagerTest extends TestCase
 {
@@ -32,17 +29,12 @@ class SettingsManagerTest extends TestCase
 
         $connection = DriverManager::getConnection([
             'driver' => 'pdo_sqlite',
-            'path' => __DIR__ . '/db.sqlite',
+            'memory' => true,
         ], $config);
 
 
         // $config = ORMSetup::createAttributeMetadataConfiguration([__DIR__ . '/../src/Entity'], true, null, null, false);
         $this->entityManager = new EntityManager($connection, $config);
-
-        // Initialize the schema
-        $schemaTool = new SchemaTool($this->entityManager);
-        $metadata = $this->entityManager->getMetadataFactory()->getAllMetadata();
-        $schemaTool->createSchema($metadata);
 
         // Initialize SettingsManager
         $this->settingsManager = new SettingsManager($this->entityManager);
@@ -50,48 +42,54 @@ class SettingsManagerTest extends TestCase
 
     public function testAddSetting(): void
     {
-        $this->settingsManager->add('test_setting', SettingType::STRING, 'test_value');
-        $setting = $this->settingsManager->get('test_setting');
+        $this->settingsManager->add('testAddSetting', SettingType::STRING, 'testAddSetting');
+        $setting = $this->settingsManager->get('testAddSetting');
 
         $this->assertInstanceOf(Setting::class, $setting);
-        $this->assertEquals('test_value', $setting->getValue());
+        $this->assertEquals('testAddSetting', $setting->getValue());
+
+        $this->settingsManager->remove('testAddSetting');
     }
 
     public function testAddDuplicateSettingThrowsException(): void
     {
-        $this->settingsManager->add('test_setting', SettingType::STRING, 'test_value');
+        if (!$this->settingsManager->exists('testAddDuplicateSettingThrowsException')) {
+            $this->settingsManager->add('testAddDuplicateSettingThrowsException', SettingType::STRING, 'testAddDuplicateSettingThrowsException');
+        }
 
         $this->expectException(SettingAlreadyExistsException::class);
-        $this->settingsManager->add('test_setting', SettingType::STRING, 'test_value');
+        $this->settingsManager->add('testAddDuplicateSettingThrowsException', SettingType::STRING, 'testAddDuplicateSettingThrowsException');
     }
 
     public function testUpdateSetting(): void
     {
-        $this->settingsManager->add('test_setting', SettingType::STRING, 'initial_value');
-        $this->settingsManager->update('test_setting', 'updated_value');
-        $setting = $this->settingsManager->get('test_setting');
+        $this->settingsManager->add('testUpdateSetting', SettingType::STRING, 'testUpdateSetting');
+        $this->settingsManager->update('testUpdateSetting', 'updatedValue');
+        $setting = $this->settingsManager->get('testUpdateSetting');
 
-        $this->assertEquals('updated_value', $setting->getValue());
+        $this->assertEquals('updatedValue', $setting->getValue());
+
+        $this->settingsManager->remove('testUpdateSetting');
     }
 
     public function testUpdateNonExistentSettingThrowsException(): void
     {
         $this->expectException(SettingNotFoundException::class);
-        $this->settingsManager->update('non_existent_setting', 'value');
+        $this->settingsManager->update('testUpdateNonExistentSettingThrowsException', 'value');
     }
 
     public function testRemoveSetting(): void
     {
-        $this->settingsManager->add('test_setting', SettingType::STRING, 'value');
-        $this->settingsManager->remove('test_setting');
+        $this->settingsManager->add('testRemoveSetting', SettingType::STRING, 'testRemoveSetting');
+        $this->settingsManager->remove('testRemoveSetting');
 
-        $setting = $this->settingsManager->get('test_setting');
+        $setting = $this->settingsManager->get('testRemoveSetting');
         $this->assertNull($setting);
     }
 
     public function testRemoveNonExistentSettingThrowsException(): void
     {
         $this->expectException(SettingNotFoundException::class);
-        $this->settingsManager->remove('non_existent_setting');
+        $this->settingsManager->remove('testRemoveNonExistentSettingThrowsException');
     }
 }

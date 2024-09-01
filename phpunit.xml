@@ -1,9 +1,19 @@
-<phpunit bootstrap="vendor/autoload.php"
-         colors="true"
-         strict="true">
+<?xml version="1.0" encoding="UTF-8"?>
+<phpunit bootstrap="vendor/autoload.php" colors="true" stopOnFailure="false">
     <testsuites>
-        <testsuite name="Application Test Suite">
+        <testsuite name="Tests">
             <directory>Tests</directory>
         </testsuite>
     </testsuites>
+    <source>
+        <include>
+        <directory>Src</directory>
+        </include>
+    </source>
+
+    <coverage>
+        <report>
+            <html outputDirectory="coverage/html"/>
+        </report>
+    </coverage>
 </phpunit>
