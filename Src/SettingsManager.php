@@ -7,7 +7,7 @@ namespace Temant\SettingsManager {
     use Temant\SettingsManager\Enum\SettingType;
     use Temant\SettingsManager\Exception\SettingAlreadyExistsException;
     use Temant\SettingsManager\Exception\SettingNotFoundException;
-    use Temant\SettingsManager\Initialization\SettingsTableInitializer;
+    use Temant\SettingsManager\Utils\TableInitializer;
 
     /**
      * SettingsManager is responsible for managing application settings,
@@ -25,8 +25,7 @@ namespace Temant\SettingsManager {
             private EntityManagerInterface $entityManager,
             private string $tableName = "settings"
         ) {
-            $initializer = new SettingsTableInitializer($this->entityManager, $this->tableName);
-            $initializer->initialize();
+            TableInitializer::init($this->entityManager, $this->tableName);
         }
 
         /**
