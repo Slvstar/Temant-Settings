@@ -30,5 +30,10 @@ namespace Temant\SettingsManager\Enum {
          * Represents a JSON type setting.
          */
         case JSON = 'json';
+
+        /**
+         * Represents an auto-determined type setting.
+         */
+        case AUTO = 'auto';
     }
 }

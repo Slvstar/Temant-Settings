@@ -3,10 +3,13 @@
 namespace Temant\SettingsManager {
 
     use Doctrine\ORM\EntityManagerInterface;
-    use Temant\SettingsManager\Entity\Setting;
+    use InvalidArgumentException;
+    use Temant\SettingsManager\Entity\SettingEntity;
     use Temant\SettingsManager\Enum\SettingType;
+    use Temant\SettingsManager\Enum\UpdateType;
     use Temant\SettingsManager\Exception\SettingAlreadyExistsException;
     use Temant\SettingsManager\Exception\SettingNotFoundException;
+    use Temant\SettingsManager\Exception\SettingTypeMismatchException;
     use Temant\SettingsManager\Utils\TableInitializer;
 
     /**
@@ -29,46 +32,30 @@ namespace Temant\SettingsManager {
         }
 
         /**
-         * Adds a new setting. Throws an exception if the setting already exists.
+         * Sets or adds a setting value. Updates if the setting exists, otherwise creates it.
          *
          * @param string $name The name of the setting.
+         * @param mixed $value The value to set.
          * @param SettingType $type The type of the setting value.
-         * @param mixed $value The value of the setting.
+         * @param bool $allowUpdate Whether to allow updating an existing setting. Defaults to true.
          * @return self Fluent interface, returns the instance of the `SettingsManager`.
-         * @throws SettingAlreadyExistsException If the setting already exists.
+         * @throws SettingAlreadyExistsException If $allowUpdate is false and the setting already exists.
          */
-        public function add(string $name, SettingType $type, mixed $value): self
+        public function set(string $name, mixed $value, SettingType $type = SettingType::AUTO, bool $allowUpdate = true): self
         {
-            if ($this->exists($name)) {
-                throw new SettingAlreadyExistsException("A setting with the name '$name' already exists.");
+            if ($type === SettingType::AUTO) {
+                $type = $this->detectType($value);
             }
 
-            $setting = new Setting($name, $type, $value);
-            $this->entityManager->persist($setting);
-            $this->entityManager->flush();
-
-            return $this;
-        }
-
-        /**
-         * Sets or updates a setting value. Creates the setting if it doesn't exist.
-         *
-         * @param string $name The name of the setting.
-         * @param SettingType $type The type of the setting value.
-         * @param mixed $value The value to set.
-         * @return self Fluent interface, returns the instance of the `SettingsManager`.
-         */
-        public function set(string $name, SettingType $type, mixed $value): self
-        {
             $setting = $this->get($name);
 
-            if ($setting !== null) {
-                // Update existing setting
-                $setting->setType($type);
-                $setting->setValue($value);
+            if ($allowUpdate && $setting) {
+                $setting->setType($type)->setValue($value);
+            } elseif (!$allowUpdate && $setting) {
+                throw new SettingAlreadyExistsException("A setting with the name '$name' already exists.");
             } else {
                 // Create a new setting
-                $setting = new Setting($name, $type, $value);
+                $setting = new SettingEntity($name, $type, $value);
                 $this->entityManager->persist($setting);
             }
 
@@ -82,10 +69,11 @@ namespace Temant\SettingsManager {
          *
          * @param string $name The name of the setting.
          * @param mixed $value The new value of the setting.
-         * @return Setting The updated setting.
+         * @param UpdateType $updateType Whether to update the type if it changes. Defaults to false.
+         * @return SettingEntity The updated setting.
          * @throws SettingNotFoundException If the setting does not exist.
          */
-        public function update(string $name, mixed $value): Setting
+        public function update(string $name, mixed $value, UpdateType $updateType = UpdateType::OVERRIDE): SettingEntity
         {
             $setting = $this->get($name);
 
@@ -93,7 +81,14 @@ namespace Temant\SettingsManager {
                 throw new SettingNotFoundException("Cannot update. No setting found with the name '$name'.");
             }
 
+            if ($updateType === UpdateType::OVERRIDE) {
+                $newType = $this->detectType($value);
+                $setting->setType($newType);
+            }
+
+            $this->validateType($setting->getType(), $value);
             $setting->setValue($value);
+
             $this->entityManager->flush();
 
             return $setting;
@@ -103,12 +98,12 @@ namespace Temant\SettingsManager {
          * Retrieves a setting by its key.
          *
          * @param string $key The key of the desired setting.
-         * @return Setting|null The setting entity, or null if not found.
+         * @return SettingEntity|null The setting entity, or null if not found.
          */
-        public function get(string $key): ?Setting
+        public function get(string $key): ?SettingEntity
         {
             return $this->entityManager
-                ->getRepository(Setting::class)
+                ->getRepository(SettingEntity::class)
                 ->findOneBy(['name' => $key]);
         }
 
@@ -126,12 +121,12 @@ namespace Temant\SettingsManager {
         /**
          * Retrieves all settings from the database.
          *
-         * @return Setting[] An array of all settings.
+         * @return SettingEntity[] An array of all settings.
          */
         public function all(): array
         {
             return $this->entityManager
-                ->getRepository(Setting::class)
+                ->getRepository(SettingEntity::class)
                 ->findAll();
         }
 
@@ -154,6 +149,49 @@ namespace Temant\SettingsManager {
             $this->entityManager->flush();
 
             return $this;
+        }
+
+        /**
+         * Automatically determines the type of the given value for setting purposes.
+         *
+         * @param mixed $value The value for which to determine the type.
+         * @return SettingType The detected setting type.
+         * @throws InvalidArgumentException If the value type is unsupported.
+         */
+        private function detectType(mixed $value): SettingType
+        {
+            return match (true) {
+                is_string($value) && json_validate($value) => SettingType::JSON,
+                is_string($value) => SettingType::STRING,
+                is_int($value) => SettingType::INTEGER,
+                is_bool($value) => SettingType::BOOLEAN,
+                is_float($value) => SettingType::FLOAT,
+                default => throw new InvalidArgumentException("Unsupported value type for auto-detection."),
+            };
+        }
+
+        /**
+         * Validates that the given value matches the expected SettingType.
+         *
+         * @param SettingType $expectedType The expected type of the value.
+         * @param mixed $value The value to validate.
+         * @throws SettingTypeMismatchException if the value does not match the expected type.
+         */
+        private function validateType(SettingType $expectedType, mixed $value): void
+        {
+            $isValid = match ($expectedType) {
+                SettingType::JSON => is_string($value) && json_validate($value),
+                SettingType::STRING => is_string($value),
+                SettingType::INTEGER => is_int($value),
+                SettingType::BOOLEAN => is_bool($value),
+                SettingType::FLOAT => is_float($value),
+            };
+
+            if (!$isValid) {
+                throw new SettingTypeMismatchException(
+                    sprintf("Expected type {%s} but got {%s}", $expectedType->value, gettype($value))
+                );
+            }
         }
     }
 }

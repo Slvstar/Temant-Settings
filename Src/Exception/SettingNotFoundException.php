@@ -13,11 +13,11 @@ namespace Temant\SettingsManager\Exception {
         /**
          * Constructor for SettingNotFoundException.
          *
-         * @param string $message The error message. Defaults to 'Setting not found.'.
+         * @param string $message The error message. Defaults to 'SettingEntity not found.'.
          * @param int $code The error code. Defaults to 0.
          * @param Throwable|null $previous The previous throwable used for the exception chaining.
          */
-        public function __construct(string $message = 'Setting not found.', int $code = 0, ?Throwable $previous = null)
+        public function __construct(string $message = 'SettingEntity not found.', int $code = 0, ?Throwable $previous = null)
         {
             parent::__construct($message, $code, $previous);
         }

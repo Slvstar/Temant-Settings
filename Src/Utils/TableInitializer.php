@@ -5,7 +5,7 @@ namespace Temant\SettingsManager\Utils {
     use Throwable;
     use Doctrine\ORM\EntityManagerInterface;
     use Doctrine\ORM\Tools\SchemaTool;
-    use Temant\SettingsManager\Entity\Setting;
+    use Temant\SettingsManager\Entity\SettingEntity;
     use Temant\SettingsManager\Exception\SettingsTableInitializationException;
 
     /**
@@ -24,20 +24,20 @@ namespace Temant\SettingsManager\Utils {
         public static function init(EntityManagerInterface $entityManager, ?string $tableName = null): void
         {
             try {
-                // Retrieve metadata for the Setting entity
-                $metadata = $entityManager->getClassMetadata(Setting::class);
+                // Retrieve metadata for the SettingEntity entity
+                $metadata = $entityManager->getClassMetadata(SettingEntity::class);
 
                 // Adjust table name based on the provided tableName
                 if ($tableName) {
-                    $metadata->setTableName($tableName);
+                    $metadata->setPrimaryTable(['name' => $tableName]);
                 }
 
                 // Create schema manager instance
                 $schemaManager = $entityManager->getConnection()->createSchemaManager();
 
                 // Early return if the settings table already exists
-                if ($schemaManager->tablesExist([$tableName])) {
-                    return;
+                if ($schemaManager->tableExists($tableName)) {
+                    throw new SettingsTableInitializationException("Table $tableName already exists!");
                 }
 
                 // Create schema tool
@@ -45,7 +45,6 @@ namespace Temant\SettingsManager\Utils {
 
                 // Create the schema for the table
                 $schemaTool->createSchema([$metadata]);
-
             } catch (Throwable $e) {
                 // Throw a custom exception in case of failure
                 throw new SettingsTableInitializationException("An error occurred during settings table initialization: {$e->getMessage()}");

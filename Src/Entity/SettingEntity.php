@@ -9,10 +9,9 @@ use Stringable;
 use DateTimeImmutable;
 use Doctrine\DBAL\Types\Types;
 use Temant\SettingsManager\Enum\SettingType;
-use Temant\SettingsManager\Exception\SettingTypeMismatchException;
 
 #[Entity]
-class Setting implements Stringable
+class SettingEntity implements Stringable
 {
     /**
      * The name of the setting, which is the primary key.
@@ -56,7 +55,7 @@ class Setting implements Stringable
     private ?DateTimeImmutable $updatedAt = null;
 
     /**
-     * Setting constructor.
+     * SettingEntity constructor.
      * 
      * @param string $name The name of the setting.
      * @param SettingType $type The type of the setting.
@@ -114,17 +113,10 @@ class Setting implements Stringable
      * 
      * @param mixed $value The new value of the setting.
      * @return self
-     * @throws SettingTypeMismatchException if the value does not match the expected type.
      */
     public function setValue(mixed $value): self
     {
-        $expectedType = $this->getType();
-        $this->validateType($expectedType, $value);
-
-        $this->value = (string) match ($expectedType) {
-            SettingType::STRING, SettingType::INTEGER, SettingType::BOOLEAN, SettingType::FLOAT => (string) $value,
-            SettingType::JSON => json_encode($value),
-        };
+        $this->value = (string) $value;
         $this->updatedAt = new DateTimeImmutable;
         return $this;
     }
@@ -180,27 +172,5 @@ class Setting implements Stringable
     public function __toString(): string
     {
         return $this->value;
-    }
-
-    /**
-     * Validates that the given value matches the expected SettingType.
-     *
-     * @param SettingType $expectedType The expected type of the value.
-     * @param mixed $value The value to validate.
-     * @throws SettingTypeMismatchException if the value does not match the expected type.
-     */
-    private function validateType(SettingType $expectedType, mixed $value): void
-    {
-        $isValid = match ($expectedType) {
-            SettingType::STRING => is_string($value),
-            SettingType::INTEGER => is_int($value),
-            SettingType::BOOLEAN => is_bool($value),
-            SettingType::FLOAT => is_float($value),
-            SettingType::JSON => is_array($value) || is_object($value),
-        };
-
-        if (!$isValid) {
-            throw new SettingTypeMismatchException("Expected type '{$expectedType->value}' but got '{gettype($value)'");
-        }
     }
 }

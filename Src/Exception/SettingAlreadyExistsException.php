@@ -13,11 +13,11 @@ namespace Temant\SettingsManager\Exception {
         /**
          * Constructor for SettingAlreadyExistsException.
          *
-         * @param string $message The error message. Defaults to 'Setting already exists.'.
+         * @param string $message The error message. Defaults to 'SettingEntity already exists.'.
          * @param int $code The error code. Defaults to 0.
          * @param Throwable|null $previous The previous throwable used for the exception chaining.
          */
-        public function __construct(string $message = 'Setting already exists.', int $code = 0, ?Throwable $previous = null)
+        public function __construct(string $message = 'SettingEntity already exists.', int $code = 0, ?Throwable $previous = null)
         {
             parent::__construct($message, $code, $previous);
         }
