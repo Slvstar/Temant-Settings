@@ -161,6 +161,7 @@ namespace Temant\SettingsManager {
         private function detectType(mixed $value): SettingType
         {
             return match (true) {
+                $value instanceof SettingType => $value,
                 is_string($value) && json_validate($value) => SettingType::JSON,
                 is_string($value) => SettingType::STRING,
                 is_int($value) => SettingType::INTEGER,
@@ -179,6 +180,10 @@ namespace Temant\SettingsManager {
          */
         private function validateType(SettingType $expectedType, mixed $value): void
         {
+            if ($expectedType === SettingType::AUTO) {
+                return;
+            }
+
             $isValid = match ($expectedType) {
                 SettingType::JSON => is_string($value) && json_validate($value),
                 SettingType::STRING => is_string($value),

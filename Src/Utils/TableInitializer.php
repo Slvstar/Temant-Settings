@@ -30,6 +30,8 @@ namespace Temant\SettingsManager\Utils {
                 // Adjust table name based on the provided tableName
                 if ($tableName) {
                     $metadata->setPrimaryTable(['name' => $tableName]);
+                } else {
+                    return;
                 }
 
                 // Create schema manager instance

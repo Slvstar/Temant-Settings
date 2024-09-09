@@ -105,6 +105,7 @@ class SettingEntity implements Stringable
             SettingType::BOOLEAN => (bool) $this->value,
             SettingType::FLOAT => (float) $this->value,
             SettingType::JSON => json_decode($this->value, true),
+            default => $this->value
         };
     }
 
