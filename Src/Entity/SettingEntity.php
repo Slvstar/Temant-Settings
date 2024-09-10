@@ -183,12 +183,6 @@ class SettingEntity implements Stringable, Arrayable
      */
     public function __toArray(): array
     {
-        return [
-            'name' => $this->name,
-            'type' => $this->getType()->value,
-            'value' => $this->getValue(),
-            'createdAt' => $this->createdAt->format('Y-m-d H:i:s'),
-            'updatedAt' => $this->updatedAt?->format('Y-m-d H:i:s')
-        ];
+        return get_object_vars($this);
     }
 }
