@@ -190,6 +190,7 @@ class SettingsManagerTest extends TestCase
     #[TestWith([SettingType::BOOLEAN, true])]
     #[TestWith([SettingType::FLOAT, 1.12])]
     #[TestWith([SettingType::JSON, '{"key":"value"}'])]
+    #[TestWith([SettingType::AUTO, 'test_auto'])]
     public function testValidateTypeWithValidTypes(SettingType $type, mixed $value): void
     {
         $this->expectNotToPerformAssertions();

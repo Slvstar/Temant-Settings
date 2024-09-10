@@ -36,12 +36,17 @@ final class TableInitializerTest extends TestCase
         $this->assertContains('settings', $tableNames);
     }
 
-    public function testCannotAddSameTable(): void
+    public function testCannotAddAnExistingTable(): void
     {
         $tableName = 'settings';
+        $this->assertTrue(TableInitializer::init($this->entityManager, $tableName));
+        $this->assertFalse(TableInitializer::init($this->entityManager, $tableName));
+    }
+
+    public function testExceptionIsThrownOnInitializationFailure(): void
+    {
         $this->expectException(SettingsTableInitializationException::class);
-        $this->expectExceptionMessage("Table $tableName already exists!");
-        TableInitializer::init($this->entityManager, $tableName);
-        TableInitializer::init($this->entityManager, $tableName);
+        
+        TableInitializer::init($this->entityManager, 1);
     }
 }

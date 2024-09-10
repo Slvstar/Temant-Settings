@@ -21,7 +21,7 @@ namespace Temant\SettingsManager\Utils {
          * @param ?string $tableName The name of the settings table.
          * @throws SettingsTableInitializationException If an error occurs during initialization.
          */
-        public static function init(EntityManagerInterface $entityManager, ?string $tableName = null): void
+        public static function init(EntityManagerInterface $entityManager, ?string $tableName = null): bool
         {
             try {
                 // Retrieve metadata for the SettingEntity entity
@@ -30,16 +30,14 @@ namespace Temant\SettingsManager\Utils {
                 // Adjust table name based on the provided tableName
                 if ($tableName) {
                     $metadata->setPrimaryTable(['name' => $tableName]);
-                } else {
-                    return;
                 }
 
                 // Create schema manager instance
                 $schemaManager = $entityManager->getConnection()->createSchemaManager();
 
                 // Early return if the settings table already exists
-                if ($schemaManager->tableExists($tableName)) {
-                    throw new SettingsTableInitializationException("Table $tableName already exists!");
+                if (!is_string($tableName) || $schemaManager->tableExists($tableName)) {
+                    return false;
                 }
 
                 // Create schema tool
@@ -47,6 +45,8 @@ namespace Temant\SettingsManager\Utils {
 
                 // Create the schema for the table
                 $schemaTool->createSchema([$metadata]);
+
+                return true;
             } catch (Throwable $e) {
                 // Throw a custom exception in case of failure
                 throw new SettingsTableInitializationException("An error occurred during settings table initialization: {$e->getMessage()}");
