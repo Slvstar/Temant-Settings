@@ -2,10 +2,10 @@
 
 namespace Temant\SettingsManager\Utils {
 
+    use JsonException;
     use Temant\SettingsManager\Entity\SettingEntity;
     use Temant\SettingsManager\Exception\SettingsImportExportException;
     use Temant\SettingsManager\SettingsManager;
-    use Throwable;
 
     final class SettingsExporter
     {
@@ -13,9 +13,9 @@ namespace Temant\SettingsManager\Utils {
          * Exports all settings to an array format.
          *
          * @param SettingsManager $settingsManager The Doctrine entity manager.
-         * @return SettingEntity[] The exported settings as an array.
+         * @return array<SettingEntity> The exported settings as an array.
          */
-        public static function exportToArray(SettingsManager $settingsManager): array
+        public static function toArray(SettingsManager $settingsManager): array
         {
             return array_map(function (SettingEntity $setting): array {
                 return $setting->__toArray();
@@ -26,19 +26,12 @@ namespace Temant\SettingsManager\Utils {
          * Exports all settings to a JSON format.
          *
          * @param SettingsManager $settingsManager The Doctrine entity manager.
-         * @return string The exported settings as a JSON string.
-         * @throws SettingsImportExportException If the export fails.
+         * @return string The exported settings as a JSON string. 
          */
-        public static function exportToJson(SettingsManager $settingsManager): string
+        public static function toJson(SettingsManager $settingsManager): string
         {
-            try {
-                $data = self::exportToArray($settingsManager);
-                return json_encode($data, JSON_THROW_ON_ERROR | JSON_PRETTY_PRINT);
-            } catch (Throwable $e) {
-                throw new SettingsImportExportException(
-                    sprintf("Failed to export settings to JSON: %s", $e->getMessage())
-                );
-            }
+            $data = self::toArray($settingsManager);
+            return json_encode($data, JSON_PRETTY_PRINT);
         }
     }
 }

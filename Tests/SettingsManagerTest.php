@@ -19,7 +19,6 @@ use Temant\SettingsManager\SettingsManager;
 
 class SettingsManagerTest extends TestCase
 {
-    private EntityManagerInterface $entityManager;
     private SettingsManager $settingsManager;
 
     protected function setUp(): void
@@ -31,10 +30,10 @@ class SettingsManagerTest extends TestCase
             'memory' => true,
         ], $config);
 
-        $this->entityManager = new EntityManager($connection, $config);
+        $entityManager = new EntityManager($connection, $config);
 
         // Initialize SettingsManager
-        $this->settingsManager = new SettingsManager($this->entityManager);
+        $this->settingsManager = new SettingsManager($entityManager);
     }
 
     public function testSetSetting(): void

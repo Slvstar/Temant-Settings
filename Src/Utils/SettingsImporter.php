@@ -2,10 +2,9 @@
 
 namespace Temant\SettingsManager\Utils {
 
-    use Doctrine\ORM\EntityManagerInterface;
-    use Temant\SettingsManager\Entity\SettingEntity;
     use Temant\SettingsManager\Enum\SettingType;
     use Temant\SettingsManager\Exception\SettingsImportExportException;
+    use Temant\SettingsManager\SettingsManager;
     use Throwable;
 
     final class SettingsImporter
@@ -13,51 +12,41 @@ namespace Temant\SettingsManager\Utils {
         /**
          * Imports settings from an array.
          *
-         * @param EntityManagerInterface $entityManager The Doctrine entity manager.
+         * @param SettingsManager $settingsManager The settings manager.
          * @param array $settingsData The settings data to import.
          * @return void
          * @throws SettingsImportExportException If import fails.
          */
-        public static function importFromArray(EntityManagerInterface $entityManager, array $settingsData): void
+        public static function fromArray(SettingsManager $settingsManager, array $settingsData): void
         {
             try {
                 foreach ($settingsData as $data) {
-                    $setting = $entityManager->getRepository(SettingEntity::class)
-                        ->findOneBy(['name' => $data['name']]) ?? new SettingEntity(
-                        $data['name'],
-                        SettingType::from($data['type']),
-                        $data['value']
-                    );
-
-                    // Set the values if the setting already exists
-                    $setting->setType(SettingType::from($data['type']));
-                    $setting->setValue($data['value']);
-
-                    $entityManager->persist($setting);
+                    $settingsManager->set($data['name'], $data['value'], SettingType::from($data['type']));
                 }
-
-                // Flush to save changes
-                $entityManager->flush();
             } catch (Throwable $e) {
-                throw new SettingsImportExportException("Failed to import settings from array: " . $e->getMessage());
+                throw new SettingsImportExportException(
+                    sprintf("Failed to import settings from array: %s", $e->getMessage())
+                );
             }
         }
 
         /**
          * Imports settings from a JSON string.
          *
-         * @param EntityManagerInterface $entityManager The Doctrine entity manager.
+         * @param SettingsManager $settingsManager The settings manager.
          * @param string $jsonData The JSON data to import.
          * @return void
-         * @throws SettingsImportExportException If import fails.
+         * @throws SettingsImportExportException If the import fails.
          */
-        public static function importFromJson(EntityManagerInterface $entityManager, string $jsonData): void
+        public static function fromJson(SettingsManager $settingsManager, string $jsonData): void
         {
             try {
                 $data = json_decode($jsonData, true, 512, JSON_THROW_ON_ERROR);
-                self::importFromArray($entityManager, $data);
+                self::fromArray($settingsManager, $data);
             } catch (Throwable $e) {
-                throw new SettingsImportExportException("Failed to import settings from JSON: " . $e->getMessage());
+                throw new SettingsImportExportException(
+                    sprintf("Failed to import settings from JSON: %s", $e->getMessage())
+                );
             }
         }
     }

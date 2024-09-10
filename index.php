@@ -96,7 +96,7 @@ $adminEmail = $settingsManager->get('admin_email');
 dump($adminEmail ? "Admin email: " . $adminEmail->getValue() : "Admin email setting not found.");
 
 // Export settings to JSON
-$jsonData = SettingsExporter::exportToJson($settingsManager);
+$jsonData = SettingsExporter::toJson($settingsManager);
 
 file_put_contents(__DIR__ . "/test.json", $jsonData);
 dd($jsonData);

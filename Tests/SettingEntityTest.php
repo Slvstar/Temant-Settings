@@ -74,6 +74,30 @@ class SettingEntityTest extends TestCase
     {
         $entity = new SettingEntity('testName', SettingType::STRING, 'testValue');
 
+        $this->assertIsString((string) $entity);
         $this->assertEquals('testValue', (string) $entity);
+    }
+
+    public function testToArray(): void
+    {
+        $entity = new SettingEntity('testName', SettingType::STRING, 'testValue');
+
+        $this->assertIsArray($entity->__toArray());
+
+
+        $this->assertArrayHasKey('name', $entity->__toArray());
+        $this->assertEquals('testName', $entity->__toArray()['name']);
+
+        $this->assertArrayHasKey('value', $entity->__toArray());
+        $this->assertEquals('testValue', $entity->__toArray()['value']);
+
+        $this->assertArrayHasKey('type', $entity->__toArray());
+        $this->assertEquals(SettingType::STRING->value, $entity->__toArray()['type']);
+
+        $this->assertArrayHasKey('createdAt', $entity->__toArray());
+        $this->assertInstanceOf(DateTimeImmutable::class, $entity->__toArray()['createdAt']);
+
+        $this->assertArrayHasKey('updatedAt', $entity->__toArray());
+        $this->assertInstanceOf(DateTimeImmutable::class, $entity->__toArray()['updatedAt']);
     }
 }
