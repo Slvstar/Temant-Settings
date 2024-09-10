@@ -12,16 +12,6 @@ jobs:
   build:
     runs-on: ubuntu-latest
 
-    services:
-      redis:
-        image: redis:latest
-        ports:
-          - 6379:6379
-      memcached:
-        image: memcached:latest
-        ports:
-          - 11211:11211
-
     steps:
     # Checkout the repository
     - name: Checkout code
