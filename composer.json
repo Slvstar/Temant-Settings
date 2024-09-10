@@ -1,4 +1,8 @@
 {
+    "name": "temant/settings-manager",
+    "description": "A flexible settings management library based on doctrine orm.",
+    "type": "library",
+    "license": "MIT",
     "autoload": {
         "psr-4": {
             "Temant\\SettingsManager\\": "Src/"
@@ -14,8 +18,16 @@
         "phpunit/phpunit": "^11.3"
     },
     "scripts": {
-        "phpstan": "./vendor/bin/phpstan",
-        "phpunit": "./vendor/bin/phpunit"
+        "phpstan": "./vendor/bin/phpstan analyse",
+        "phpunit": "./vendor/bin/phpunit",
+        "check-all": [
+            "@phpstan",
+            "@test"
+        ]
+    },
+    "scripts-descriptions": {
+        "phpstan": "Run PHPStan for static analysis",
+        "phpunit": "Run PHPUnit tests"
     },
     "scripts-aliases": {
         "phpstan": [

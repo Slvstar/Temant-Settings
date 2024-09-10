@@ -1,19 +1,21 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<phpunit bootstrap="vendor/autoload.php" colors="true" stopOnFailure="false">
+<phpunit cacheDirectory="build/.phpunit.cache" bootstrap="vendor/autoload.php" colors="true" stopOnFailure="false">
     <testsuites>
-        <testsuite name="Tests">
+        <testsuite name="Temant Settings Manager Tests">
             <directory>Tests</directory>
         </testsuite>
     </testsuites>
-    <source>
-        <include>
-        <directory>Src</directory>
-        </include>
-    </source>
 
     <coverage>
         <report>
-            <html outputDirectory="coverage/html"/>
+            <clover outputFile="build/coverage/clover.xml" />
+            <html outputDirectory="build/coverage/html" />
         </report>
-    </coverage>
+    </coverage>    
+
+    <source>
+        <include>
+            <directory suffix=".php">./Src</directory>
+        </include>
+    </source>
 </phpunit>
