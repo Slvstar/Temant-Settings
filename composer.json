@@ -14,6 +14,17 @@
         "phpunit/phpunit": "^11.3"
     },
     "scripts": {
-        "analyse": "./vendor/bin/phpstan"
+        "phpstan": "./vendor/bin/phpstan",
+        "phpunit": "./vendor/bin/phpunit"
+    },
+    "scripts-aliases": {
+        "phpstan": [
+            "stan",
+            "analyze",
+            "analyse"
+        ],
+        "phpunit": [
+            "test"
+        ]
     }
 }
