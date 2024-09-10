@@ -41,7 +41,12 @@ namespace Temant\SettingsManager\Utils {
         public static function fromJson(SettingsManager $settingsManager, string $jsonData): void
         {
             try {
-                $data = json_decode($jsonData, true, 512, JSON_THROW_ON_ERROR) ?? [];
+                $data = json_decode($jsonData, true, 512, JSON_THROW_ON_ERROR);
+
+                if (!is_array($data)) {
+                    throw new SettingsImportExportException('Invalid JSON format, array expected.');
+                }
+
                 self::fromArray($settingsManager, $data);
             } catch (Throwable $e) {
                 throw new SettingsImportExportException(

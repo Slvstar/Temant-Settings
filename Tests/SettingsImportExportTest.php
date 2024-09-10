@@ -18,7 +18,6 @@ class SettingsImportExportTest extends TestCase
 
     protected function setUp(): void
     {
-        // Configure an in-memory SQLite database for testing
         $config = ORMSetup::createAttributeMetadataConfiguration([__DIR__], false);
         $connection = DriverManager::getConnection([
             'driver' => 'pdo_sqlite',
@@ -27,19 +26,15 @@ class SettingsImportExportTest extends TestCase
 
         $entityManager = new EntityManager($connection, $config);
 
-        // Initialize SettingsManager
         $this->settingsManager = new SettingsManager($entityManager);
 
-        // Set up initial settings
         $this->settingsManager->set('testKey', 'testValue', SettingType::STRING);
     }
 
     public function testExportToArray(): void
     {
-        // Test the exportToArray method
         $result = SettingsExporter::toArray($this->settingsManager);
 
-        // Check that the exported array contains the expected values
         $this->assertCount(1, $result);
         $this->assertEquals('testKey', $result[0]['name']);
         $this->assertEquals('testValue', $result[0]['value']);
@@ -48,11 +43,9 @@ class SettingsImportExportTest extends TestCase
 
     public function testExportToJson(): void
     {
-        // Test the exportToJson method
         $jsonData = SettingsExporter::toJson($this->settingsManager);
         $decoded = json_decode($jsonData, true);
 
-        // Check that the exported JSON contains the expected values
         $this->assertIsArray($decoded);
         $this->assertCount(1, $decoded);
         $this->assertEquals('testKey', $decoded[0]['name']);
@@ -62,26 +55,22 @@ class SettingsImportExportTest extends TestCase
 
     public function testImportFromArrayThrowsException(): void
     {
-        // Create invalid data to force an exception
         $invalidSettingsData = [
             [
                 'name' => 'site_name',
-                'type' => 'invalid_type',  // Invalid type to trigger an exception
+                'type' => 'invalid_type', 
                 'value' => 'My Website'
             ]
         ];
 
-        // Expect the custom SettingsImportExportException to be thrown
         $this->expectException(SettingsImportExportException::class);
 
-        // Run the fromArray method with invalid data, expecting it to fail
         SettingsImporter::fromArray($this->settingsManager, $invalidSettingsData);
     }
 
 
     public function testImportFromArray(): void
     {
-        // Define the new settings to import
         $settingsData = [
             [
                 'name' => 'site_name',
@@ -90,10 +79,8 @@ class SettingsImportExportTest extends TestCase
             ]
         ];
 
-        // Test the importFromArray method
         SettingsImporter::fromArray($this->settingsManager, $settingsData);
 
-        // Check that the setting was imported correctly
         $importedSetting = $this->settingsManager->get('site_name');
         $this->assertNotNull($importedSetting);
         $this->assertEquals('My Website', $importedSetting->getValue());
@@ -101,7 +88,6 @@ class SettingsImportExportTest extends TestCase
 
     public function testImportFromJson(): void
     {
-        // Define the JSON data to import
         $jsonData = json_encode([
             [
                 'name' => 'site_name',
@@ -110,10 +96,8 @@ class SettingsImportExportTest extends TestCase
             ]
         ]);
 
-        // Test the importFromJson method
         SettingsImporter::fromJson($this->settingsManager, $jsonData);
 
-        // Check that the setting was imported correctly
         $importedSetting = $this->settingsManager->get('site_name');
         $this->assertNotNull($importedSetting);
         $this->assertEquals('My Website', $importedSetting->getValue());
@@ -121,9 +105,18 @@ class SettingsImportExportTest extends TestCase
 
     public function testImportFromJsonThrowsException(): void
     {
-        // Test exception when invalid JSON is provided
         $this->expectException(SettingsImportExportException::class);
 
         SettingsImporter::fromJson($this->settingsManager, 'invalid json');
+    }
+
+    public function testImportFromJsonNonArrayThrowsException(): void
+    {
+        $nonArrayJson = '"This is a string, not an array"';
+
+        $this->expectException(SettingsImportExportException::class);
+        $this->expectExceptionMessage('Invalid JSON format, array expected.');
+
+        SettingsImporter::fromJson($this->settingsManager, $nonArrayJson);
     }
 }
