@@ -54,12 +54,7 @@ jobs:
 
     # Run PHPUnit tests with coverage
     - name: Run PHPUnit
-      env:
-        MEMCACHED_HOST: localhost
-        MEMCACHED_PORT: 11211
-        REDIS_HOST: localhost
-        REDIS_PORT: 6379
-      run: vendor/bin/phpunit --coverage-clover=coverage.xml
+      run: composer test
 
     # Upload code coverage to Codecov
     - name: Upload results to Codecov
