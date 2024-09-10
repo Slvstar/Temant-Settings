@@ -118,8 +118,10 @@ class SettingEntity implements Stringable, Arrayable
      */
     public function setValue(mixed $value): self
     {
-        $this->value = (string) $value;
-        $this->updatedAt = new DateTimeImmutable;
+        if (is_scalar($value)) {
+            $this->value = (string) $value;
+            $this->updatedAt = new DateTimeImmutable;
+        }
         return $this;
     }
 
@@ -177,9 +179,7 @@ class SettingEntity implements Stringable, Arrayable
     }
 
     /**
-     * Converts the SettingEntity object to an associative array.
-     *
-     * @return array The array representation of the setting entity.
+     * @inheritDoc
      */
     public function __toArray(): array
     {

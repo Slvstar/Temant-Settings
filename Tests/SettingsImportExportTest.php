@@ -6,11 +6,9 @@ use Doctrine\DBAL\DriverManager;
 use Doctrine\ORM\EntityManager;
 use Doctrine\ORM\ORMSetup;
 use PHPUnit\Framework\TestCase;
-use stdClass;
 use Temant\SettingsManager\Utils\SettingsImporter;
 use Temant\SettingsManager\Utils\SettingsExporter;
 use Temant\SettingsManager\SettingsManager;
-use Temant\SettingsManager\Entity\SettingEntity;
 use Temant\SettingsManager\Enum\SettingType;
 use Temant\SettingsManager\Exception\SettingsImportExportException;
 

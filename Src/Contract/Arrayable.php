@@ -10,7 +10,7 @@ namespace Temant\SettingsManager\Contract {
         /**
          * Converts the object to an associative array.
          *
-         * @return array The array representation of the object.
+         * @return array<mixed> The array representation of the object.
          */
         public function __toArray(): array;
     }

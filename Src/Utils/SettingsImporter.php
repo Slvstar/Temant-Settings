@@ -13,7 +13,7 @@ namespace Temant\SettingsManager\Utils {
          * Imports settings from an array.
          *
          * @param SettingsManager $settingsManager The settings manager.
-         * @param array $settingsData The settings data to import.
+         * @param array<array{name: string, value: mixed, type: string}> $settingsData The settings data to import.
          * @return void
          * @throws SettingsImportExportException If import fails.
          */
@@ -41,7 +41,7 @@ namespace Temant\SettingsManager\Utils {
         public static function fromJson(SettingsManager $settingsManager, string $jsonData): void
         {
             try {
-                $data = json_decode($jsonData, true, 512, JSON_THROW_ON_ERROR);
+                $data = json_decode($jsonData, true, 512, JSON_THROW_ON_ERROR) ?? [];
                 self::fromArray($settingsManager, $data);
             } catch (Throwable $e) {
                 throw new SettingsImportExportException(

@@ -2,9 +2,7 @@
 
 namespace Temant\SettingsManager\Utils {
 
-    use JsonException;
     use Temant\SettingsManager\Entity\SettingEntity;
-    use Temant\SettingsManager\Exception\SettingsImportExportException;
     use Temant\SettingsManager\SettingsManager;
 
     final class SettingsExporter
@@ -13,7 +11,7 @@ namespace Temant\SettingsManager\Utils {
          * Exports all settings to an array format.
          *
          * @param SettingsManager $settingsManager The Doctrine entity manager.
-         * @return array<SettingEntity> The exported settings as an array.
+         * @return array<mixed> The exported settings as an array.
          */
         public static function toArray(SettingsManager $settingsManager): array
         {
@@ -31,7 +29,8 @@ namespace Temant\SettingsManager\Utils {
         public static function toJson(SettingsManager $settingsManager): string
         {
             $data = self::toArray($settingsManager);
-            return json_encode($data, JSON_PRETTY_PRINT);
+            $json = json_encode($data, JSON_PRETTY_PRINT);
+            return $json !== false ? $json : '';
         }
     }
 }
