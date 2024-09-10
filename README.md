@@ -1,9 +1,9 @@
 
 # Temant Settings Manager
 
-![Build Status](https://github.com/EmadAlmahdi/Temant-Settings/actions/workflows/ci.yml/badge.svg) 
-![Coverage Status](https://codecov.io/gh/EmadAlmahdi/Temant-Settings/branch/main/graph/badge.svg)
-![License](https://img.shields.io/github/license/EmadAlmahdi/Temant-Settings)
+![Build Status](https://github.com/Slvstar/Temant-Settings/actions/workflows/ci.yml/badge.svg) 
+![Coverage Status](https://codecov.io/gh/Slvstar/Temant-Settings/branch/main/graph/badge.svg)
+![License](https://img.shields.io/github/license/Slvstar/Temant-Settings)
 ![PHPStan](https://img.shields.io/badge/PHPStan-level%20max-brightgreen)
 
 A flexible settings management system for PHP applications, providing support for multiple data types and seamless integration with Doctrine ORM. It offers importing, exporting, and automatic type detection for settings.
