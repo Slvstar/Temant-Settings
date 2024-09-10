@@ -8,6 +8,7 @@ use Temant\SettingsManager\Enum\UpdateType;
 use Temant\SettingsManager\Exception\SettingAlreadyExistsException;
 use Temant\SettingsManager\Exception\SettingNotFoundException;
 use Temant\SettingsManager\SettingsManager;
+use Temant\SettingsManager\Utils\SettingsExporter;
 
 require_once __DIR__ . "/vendor/autoload.php";
 
@@ -44,7 +45,7 @@ dump("Setting 'site_name' set or updated successfully.");
 
 // Update an existing setting
 try {
-    $settingsManager->update('site_name', 'My Updated Website', UpdateType::KEEP_CURRENT);
+    $settingsManager->update('site_name', 'My Updated Website', UpdateType::OVERRIDE);
     dump("Setting 'site_name' updated successfully.");
 } catch (SettingNotFoundException $e) {
     dump("Failed to update 'site_name': " . $e->getMessage() . "");
@@ -93,3 +94,9 @@ try {
 // Check a setting that may not exist
 $adminEmail = $settingsManager->get('admin_email');
 dump($adminEmail ? "Admin email: " . $adminEmail->getValue() : "Admin email setting not found.");
+
+// Export settings to JSON
+$jsonData = SettingsExporter::exportToJson($settingsManager);
+
+file_put_contents(__DIR__ . "/test.json", $jsonData);
+dd($jsonData);

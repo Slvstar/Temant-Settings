@@ -8,10 +8,11 @@ use Doctrine\ORM\Mapping\Column;
 use Stringable;
 use DateTimeImmutable;
 use Doctrine\DBAL\Types\Types;
+use Temant\SettingsManager\Contract\Arrayable;
 use Temant\SettingsManager\Enum\SettingType;
 
 #[Entity]
-class SettingEntity implements Stringable
+class SettingEntity implements Stringable, Arrayable
 {
     /**
      * The name of the setting, which is the primary key.
@@ -173,5 +174,21 @@ class SettingEntity implements Stringable
     public function __toString(): string
     {
         return $this->value;
+    }
+
+    /**
+     * Converts the SettingEntity object to an associative array.
+     *
+     * @return array The array representation of the setting entity.
+     */
+    public function __toArray(): array
+    {
+        return [
+            'name' => $this->name,
+            'type' => $this->getType()->value,
+            'value' => $this->getValue(),
+            'createdAt' => $this->createdAt->format('Y-m-d H:i:s'),
+            'updatedAt' => $this->updatedAt?->format('Y-m-d H:i:s')
+        ];
     }
 }
