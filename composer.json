@@ -6,10 +6,10 @@
     },
     "require": {
         "doctrine/orm": "^3.2",
-        "symfony/cache": "*"
+        "symfony/cache": "^7.1"
     },
     "require-dev": {
-        "symfony/var-dumper": "*",
+        "symfony/var-dumper": "^7.1",
         "phpstan/phpstan": "^1.12",
         "phpunit/phpunit": "^11.3"
     },
