@@ -103,7 +103,7 @@ class SettingEntity implements Stringable, Arrayable
         return match ($this->getType()) {
             SettingType::STRING => $this->value,
             SettingType::INTEGER => (int) $this->value,
-            SettingType::BOOLEAN => (bool) $this->value,
+            SettingType::BOOLEAN => $this->value === 'true',
             SettingType::FLOAT => (float) $this->value,
             SettingType::JSON => json_decode($this->value, true),
             default => $this->value
@@ -118,10 +118,12 @@ class SettingEntity implements Stringable, Arrayable
      */
     public function setValue(mixed $value): self
     {
-        if (is_scalar($value)) {
+        if (is_bool($value)) {
+            $this->value = $value ? 'true' : 'false';
+        } elseif (is_scalar($value)) {
             $this->value = (string) $value;
-            $this->updatedAt = new DateTimeImmutable;
         }
+        $this->updatedAt = new DateTimeImmutable;
         return $this;
     }
 

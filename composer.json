@@ -21,7 +21,7 @@
         "phpunit": "./vendor/bin/phpunit",
         "check-all": [
             "@phpstan",
-            "@test"
+            "@phpunit"
         ]
     },
     "scripts-descriptions": {
