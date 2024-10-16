@@ -21,6 +21,8 @@ class SettingsManagerTest extends TestCase
 {
     private SettingsManager $settingsManager;
 
+    private EntityManagerInterface $entityManager;
+
     protected function setUp(): void
     {
         // Configure an in-memory SQLite database for testing
@@ -30,10 +32,10 @@ class SettingsManagerTest extends TestCase
             'memory' => true,
         ], $config);
 
-        $entityManager = new EntityManager($connection, $config);
+        $this->entityManager = new EntityManager($connection, $config);
 
         // Initialize SettingsManager
-        $this->settingsManager = new SettingsManager($entityManager);
+        $this->settingsManager = new SettingsManager($this->entityManager);
     }
 
     public function testSetSetting(): void
@@ -205,5 +207,64 @@ class SettingsManagerTest extends TestCase
         $method = $reflection->getMethod($methodName);
         $method->setAccessible(true);
         return $method->invokeArgs($object, $parameters);
+    }
+
+    public function testInitializeDefaults(): void
+    {
+        // Define default settings
+        $defaultSettings = [
+            'site_name' => ['value' => 'My Website', 'type' => SettingType::STRING],
+            'maintenance_mode' => ['value' => false, 'type' => SettingType::BOOLEAN],
+            'max_users' => ['value' => 1000, 'type' => SettingType::INTEGER],
+        ];
+
+        // Initialize the SettingsManager with the default settings
+        $this->settingsManager = new SettingsManager($this->entityManager, 'settings', $defaultSettings);
+
+        // Test if the default settings have been initialized
+        $siteNameSetting = $this->settingsManager->get('site_name');
+        $maintenanceModeSetting = $this->settingsManager->get('maintenance_mode');
+        $maxUsersSetting = $this->settingsManager->get('max_users');
+
+        // Assertions for each setting
+        $this->assertNotNull($siteNameSetting);
+        $this->assertEquals('My Website', $siteNameSetting->getValue());
+        $this->assertEquals(SettingType::STRING, $siteNameSetting->getType());
+
+        $this->assertNotNull($maintenanceModeSetting);
+        $this->assertFalse($maintenanceModeSetting->getValue());
+        $this->assertEquals(SettingType::BOOLEAN, $maintenanceModeSetting->getType());
+
+        $this->assertNotNull($maxUsersSetting);
+        $this->assertEquals(1000, $maxUsersSetting->getValue());
+        $this->assertEquals(SettingType::INTEGER, $maxUsersSetting->getType());
+    }
+
+    public function testInitializeDefaultsDoesNotOverwriteExistingSettings(): void
+    {
+        // Define default settings
+        $defaultSettings = [
+            'site_name' => ['value' => 'My Website', 'type' => SettingType::STRING],
+            'maintenance_mode' => ['value' => false, 'type' => SettingType::BOOLEAN],
+        ];
+
+        // Initialize with an existing setting
+        $this->settingsManager->set('site_name', 'Existing Website', SettingType::STRING);
+
+        // Initialize the SettingsManager with default settings
+        $this->settingsManager = new SettingsManager($this->entityManager, 'settings', $defaultSettings);
+
+        // Check if the existing setting is not overwritten
+        $siteNameSetting = $this->settingsManager->get('site_name');
+        $maintenanceModeSetting = $this->settingsManager->get('maintenance_mode');
+
+        // Assertions
+        $this->assertNotNull($siteNameSetting);
+        $this->assertEquals('Existing Website', $siteNameSetting->getValue()); // Should keep the existing value
+        $this->assertEquals(SettingType::STRING, $siteNameSetting->getType());
+
+        $this->assertNotNull($maintenanceModeSetting);
+        $this->assertFalse($maintenanceModeSetting->getValue()); // This one should be initialized
+        $this->assertEquals(SettingType::BOOLEAN, $maintenanceModeSetting->getType());
     }
 }

@@ -23,12 +23,35 @@ namespace Temant\SettingsManager {
          *
          * @param EntityManagerInterface $entityManager The Doctrine entity manager.
          * @param string $tableName The name of the settings table. Default is "settings".
+         * @param array<string, array{value: mixed, type?: SettingType}> $defaultSettings Optional default settings
+         * in the format ['key' => ['value' => '...', 'type' => SettingType::...]].
          */
         public function __construct(
             private EntityManagerInterface $entityManager,
-            private string $tableName = "settings"
+            private string $tableName = "settings",
+            private array $defaultSettings = []
         ) {
             TableInitializer::init($this->entityManager, $this->tableName);
+            $this->initializeDefaults();
+        }
+
+        /**
+         * Initializes default settings if they are not already present in the database.
+         *
+         * @return void
+         */
+        private function initializeDefaults(): void
+        {
+            foreach ($this->defaultSettings as $name => $data) {
+                if (!$this->exists($name)) {
+                    $this->set(
+                        $name,
+                        $data['value'],
+                        $data['type'] ?? SettingType::AUTO,
+                        false // Do not allow updates for defaults
+                    );
+                }
+            }
         }
 
         /**
