@@ -28,7 +28,7 @@ namespace Temant\SettingsManager {
          */
         public function __construct(
             private EntityManagerInterface $entityManager,
-            private string $tableName = "settings",
+            public string $tableName = "settings",
             private array $defaultSettings = []
         ) {
             TableInitializer::init($this->entityManager, $this->tableName);

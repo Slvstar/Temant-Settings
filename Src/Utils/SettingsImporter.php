@@ -41,6 +41,9 @@ namespace Temant\SettingsManager\Utils {
         public static function fromJson(SettingsManager $settingsManager, string $jsonData): void
         {
             try {
+                /**
+                 * @var null|false|array<array{name: string, value: mixed, type: string}>
+                 */
                 $data = json_decode($jsonData, true, 512, JSON_THROW_ON_ERROR);
 
                 if (!is_array($data)) {

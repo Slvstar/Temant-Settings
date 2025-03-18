@@ -267,4 +267,31 @@ class SettingsManagerTest extends TestCase
         $this->assertFalse($maintenanceModeSetting->getValue()); // This one should be initialized
         $this->assertEquals(SettingType::BOOLEAN, $maintenanceModeSetting->getType());
     }
+
+    public function testCanPassCustomTableName()
+    {
+        $customTable = 'custom_settings';
+        $settingsManager = new SettingsManager($this->entityManager, $customTable);
+
+        $this->assertEquals($customTable, $settingsManager->tableName);
+    }
+
+    public function testDefaultSettings()
+    {
+        $settingsManager = new SettingsManager($this->entityManager, 'very_custom_table', [
+            'theme' => [
+                "value" => "dark",
+                'type' => SettingType::AUTO
+            ],
+            'age' => [
+                "value" => 15
+            ],
+        ]);
+
+        $this->assertEquals('dark', $settingsManager->get("theme")->getValue());
+        $this->assertIsString($settingsManager->get("theme")->getValue());
+
+        $this->assertEquals(15, $settingsManager->get("age")->getValue());
+        $this->assertIsInt($settingsManager->get("age")->getValue());
+    }
 }
