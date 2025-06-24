@@ -30,14 +30,13 @@ namespace Temant\SettingsManager\Utils {
                 // Adjust table name based on the provided tableName
                 if ($tableName) {
                     $metadata->setPrimaryTable(['name' => $tableName]);
-                }
-
-                // Create schema manager instance
-                $schemaManager = $entityManager->getConnection()->createSchemaManager();
+                } 
 
                 // Early return if the settings table already exists
-                if (!is_string($tableName) || $schemaManager->tableExists($tableName)) {
-                    return false;
+                if ($tableName) { 
+                    if ($entityManager->getConnection()->fetchOne("SHOW TABLES LIKE ?", [$tableName])) {
+                        return false;
+                    }
                 }
 
                 // Create schema tool
