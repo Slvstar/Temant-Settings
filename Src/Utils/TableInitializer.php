@@ -18,28 +18,45 @@ namespace Temant\SettingsManager\Utils {
          * Initializes the settings table in the database if it does not already exist.
          *
          * @param EntityManagerInterface $entityManager The Doctrine entity manager.
-         * @param ?string $tableName The name of the settings table.
+         * @param string $tableName The name of the settings table.
          * @throws SettingsTableInitializationException If an error occurs during initialization.
          */
-        public static function init(EntityManagerInterface $entityManager, ?string $tableName = null): bool
+        public static function init(EntityManagerInterface &$entityManager, string $tableName): bool
         {
             try {
+                // Tell the entity manager to ignore the created tables ..
+                $entityManager->getConfiguration()
+                    ->setSchemaAssetsFilter(
+                        fn(string $tName): bool => $tName !== $tableName
+                    );
+
                 // Retrieve metadata for the SettingEntity entity
                 $metadata = $entityManager->getClassMetadata(SettingEntity::class);
 
                 // Adjust table name based on the provided tableName
-                if ($tableName) {
-                    $metadata->setPrimaryTable(['name' => $tableName]);
-                } 
+                $metadata->setPrimaryTable(['name' => $tableName]);
 
-                // Early return if the settings table already exists
-                if ($tableName) {
-                    $quoted = $entityManager->getConnection()->quote($tableName);
-                    $sql = "SHOW TABLES LIKE $quoted";
+                // Get the current driver type ..
+                $driver = $entityManager->getConnection()->getParams()['driver'];
 
-                    if ($entityManager->getConnection()->fetchOne($sql)) {
-                        return false;
-                    }
+                // Early return if the settings table already exists 
+                switch ($driver) {
+                    case 'pdo_mysql':
+                        $quoted = $entityManager->getConnection()->quote($tableName);
+                        $sql = "SHOW TABLES LIKE $quoted";
+                        break;
+
+                    case 'pdo_sqlite':
+                        $quoted = $entityManager->getConnection()->quote($tableName);
+                        $sql = "SELECT name FROM sqlite_master WHERE type='table' AND name = $quoted";
+                        break;
+
+                    default:
+                        throw new \RuntimeException("Unsupported DB driver: $driver");
+                }
+
+                if ($entityManager->getConnection()->fetchOne($sql)) {
+                    return false;
                 }
 
                 // Create schema tool

@@ -16,7 +16,7 @@ namespace Temant\SettingsManager {
      * SettingsManager is responsible for managing application settings,
      * including adding, retrieving, updating, and deleting settings.
      */
-    final readonly class SettingsManager
+    final class SettingsManager
     {
         /**
          * Constructor for SettingsManager.

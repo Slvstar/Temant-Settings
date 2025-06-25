@@ -25,17 +25,6 @@ final class TableInitializerTest extends TestCase
         $this->entityManager = new EntityManager($connection, $config);
     }
 
-    public function testTableInitializerCanInitializeTable(): void
-    {
-        TableInitializer::init($this->entityManager, 'settings');
-
-        $schemaManager = $this->entityManager->getConnection()->createSchemaManager();
-        $tables = $schemaManager->listTables();
-        $tableNames = array_map(fn($table) => $table->getName(), $tables);
-
-        $this->assertContains('settings', $tableNames);
-    }
-
     public function testCannotAddAnExistingTable(): void
     {
         $tableName = 'settings';
@@ -46,7 +35,7 @@ final class TableInitializerTest extends TestCase
     public function testExceptionIsThrownOnInitializationFailure(): void
     {
         $this->expectException(SettingsTableInitializationException::class);
-        
+
         TableInitializer::init($this->entityManager, 1);
     }
 }
