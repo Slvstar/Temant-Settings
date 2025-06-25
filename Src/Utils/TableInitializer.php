@@ -33,8 +33,11 @@ namespace Temant\SettingsManager\Utils {
                 } 
 
                 // Early return if the settings table already exists
-                if ($tableName) { 
-                    if ($entityManager->getConnection()->fetchOne("SHOW TABLES LIKE ?", [$tableName])) {
+                if ($tableName) {
+                    $quoted = $entityManager->getConnection()->quote($tableName);
+                    $sql = "SHOW TABLES LIKE $quoted";
+
+                    if ($entityManager->getConnection()->fetchOne($sql)) {
                         return false;
                     }
                 }
