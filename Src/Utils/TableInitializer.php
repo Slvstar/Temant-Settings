@@ -37,8 +37,14 @@ namespace Temant\SettingsManager\Utils {
                 $metadata->setPrimaryTable(['name' => $tableName]);
 
                 // Get the current driver type ..
-                $driver = $entityManager->getConnection()->getParams()['driver'];
+                $params = $entityManager->getConnection()->getParams();
 
+                if (!isset($params['driver'])) {
+                    throw new \RuntimeException("Database driver not defined in connection params.");
+                }
+
+                $driver = $params['driver'];
+                
                 // Early return if the settings table already exists 
                 switch ($driver) {
                     case 'pdo_mysql':
