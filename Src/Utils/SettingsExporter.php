@@ -1,36 +1,38 @@
-<?php declare(strict_types=1);
+<?php
 
-namespace Temant\SettingsManager\Utils {
+declare(strict_types=1);
 
-    use Temant\SettingsManager\Entity\SettingEntity;
-    use Temant\SettingsManager\SettingsManager;
+namespace Temant\SettingsManager\Utils;
 
-    final class SettingsExporter
+use Temant\SettingsManager\Entity\SettingEntity;
+use Temant\SettingsManager\SettingsManager;
+
+final class SettingsExporter
+{
+    /**
+     * Exports all settings to an array format.
+     *
+     * @param SettingsManager $settingsManager The Doctrine entity manager.
+     * @return array<mixed> The exported settings as an array.
+     */
+    public static function toArray(SettingsManager $settingsManager): array
     {
-        /**
-         * Exports all settings to an array format.
-         *
-         * @param SettingsManager $settingsManager The Doctrine entity manager.
-         * @return array<mixed> The exported settings as an array.
-         */
-        public static function toArray(SettingsManager $settingsManager): array
-        {
-            return array_map(function (SettingEntity $setting): array {
-                return $setting->__toArray();
-            }, $settingsManager->all());
-        }
+        return array_map(
+            fn(SettingEntity $setting): array => $setting->__toArray(),
+            $settingsManager->all()
+        );
+    }
 
-        /**
-         * Exports all settings to a JSON format.
-         *
-         * @param SettingsManager $settingsManager The Doctrine entity manager.
-         * @return string The exported settings as a JSON string. 
-         */
-        public static function toJson(SettingsManager $settingsManager): string
-        {
-            $data = self::toArray($settingsManager);
-            $json = json_encode($data, JSON_PRETTY_PRINT);
-            return $json !== false ? $json : '';
-        }
+    /**
+     * Exports all settings to a JSON format.
+     *
+     * @param SettingsManager $settingsManager The Doctrine entity manager.
+     * @return string The exported settings as a JSON string. 
+     */
+    public static function toJson(SettingsManager $settingsManager): string
+    {
+        $data = self::toArray($settingsManager);
+        $json = json_encode($data, JSON_PRETTY_PRINT);
+        return $json !== false ? $json : '';
     }
 }
