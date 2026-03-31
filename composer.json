@@ -1,20 +1,27 @@
 {
     "name": "temant/settings-manager",
-    "description": "A flexible settings management library based on doctrine orm.",
+    "description": "A flexible, type-safe settings management library for PHP powered by Doctrine ORM.",
     "type": "library",
     "license": "MIT",
+    "keywords": ["settings", "configuration", "doctrine", "orm", "php", "typed-settings"],
     "autoload": {
         "psr-4": {
             "Temant\\SettingsManager\\": "Src/"
         }
     },
+    "autoload-dev": {
+        "psr-4": {
+            "Temant\\SettingsManager\\Tests\\": "Tests/"
+        }
+    },
     "require": {
-        "doctrine/orm": "^3.3",
-        "symfony/cache": "^7.2"
+        "php": "^8.5",
+        "doctrine/orm": "^3"
     },
     "require-dev": {
-        "phpstan/phpstan": "^2.1",
-        "phpunit/phpunit": "^12.0"
+        "phpstan/phpstan": "^2",
+        "phpunit/phpunit": "^13",
+        "symfony/cache": "^8.0"
     },
     "scripts": {
         "phpstan": "./vendor/bin/phpstan analyse",
@@ -26,16 +33,11 @@
     },
     "scripts-descriptions": {
         "phpstan": "Run PHPStan for static analysis",
-        "phpunit": "Run PHPUnit tests"
+        "phpunit": "Run PHPUnit tests",
+        "check-all": "Run static analysis and tests"
     },
     "scripts-aliases": {
-        "phpstan": [
-            "stan",
-            "analyze",
-            "analyse"
-        ],
-        "phpunit": [
-            "test"
-        ]
+        "phpstan": ["stan", "analyze", "analyse"],
+        "phpunit": ["test"]
     }
 }

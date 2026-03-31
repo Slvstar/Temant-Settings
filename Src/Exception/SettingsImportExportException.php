@@ -8,9 +8,15 @@ use RuntimeException;
 use Throwable;
 
 /**
- * Class SettingsImportExportException
- * Custom exception class for settings import/export errors.
+ * Thrown when a settings import or export operation fails.
  */
-class SettingsImportExportException extends RuntimeException implements Throwable
+final class SettingsImportExportException extends RuntimeException
 {
+    public function __construct(
+        string $message = 'Settings import/export failed.',
+        int $code = 0,
+        ?Throwable $previous = null,
+    ) {
+        parent::__construct($message, $code, $previous);
+    }
 }

@@ -5,15 +5,20 @@ declare(strict_types=1);
 namespace Temant\SettingsManager\Contract;
 
 /**
- * Interface Arrayable
- * A contract for classes that can be converted to an array.
+ * Contract for objects that can be represented as an associative array.
+ *
+ * Implementing classes should return a self-contained, serializable array —
+ * all values should be scalars, arrays, or null (no objects).
+ *
+ * @template TKey of string
+ * @template TValue
  */
 interface Arrayable
 {
     /**
-     * Converts the object to an associative array.
+     * Convert the object to an associative array.
      *
-     * @return array<mixed> The array representation of the object.
+     * @return array<TKey, TValue>
      */
     public function __toArray(): array;
 }

@@ -4,79 +4,86 @@ declare(strict_types=1);
 
 namespace Temant\SettingsManager\Utils;
 
-use Throwable;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\Tools\SchemaTool;
 use Temant\SettingsManager\Entity\SettingEntity;
 use Temant\SettingsManager\Exception\SettingsTableInitializationException;
+use Throwable;
 
 /**
- * TableInitializer is responsible for ensuring that the settings table
- * exists in the database and initializing it if necessary.
+ * Creates the settings database table if it does not already exist.
+ *
+ * Supports MySQL, PostgreSQL, and SQLite drivers. The table is excluded from
+ * Doctrine's schema asset filter so that `doctrine:migrations:diff` ignores it.
  */
 final class TableInitializer
 {
     /**
-     * Initializes the settings table in the database if it does not already exist.
+     * Ensure the settings table exists, creating it when necessary.
      *
-     * @param EntityManagerInterface $entityManager The Doctrine entity manager.
-     * @param string $tableName The name of the settings table.
-     * @throws SettingsTableInitializationException If an error occurs during initialization.
+     * @param EntityManagerInterface $entityManager Active Doctrine entity manager.
+     * @param string                 $tableName     Desired table name.
+     *
+     * @return bool `true` if the table was created, `false` if it already existed.
+     *
+     * @throws SettingsTableInitializationException On any failure.
      */
-    public static function init(EntityManagerInterface &$entityManager, string $tableName): bool
+    public static function init(EntityManagerInterface $entityManager, string $tableName): bool
     {
         try {
-            // Tell the entity manager to ignore the created tables ..
+            // Exclude the settings table from Doctrine migration diffs.
             $entityManager->getConfiguration()
                 ->setSchemaAssetsFilter(
-                    fn(string $tName): bool => $tName !== $tableName
+                    fn(string $name): bool => $name !== $tableName,
                 );
 
-            // Retrieve metadata for the SettingEntity entity
             $metadata = $entityManager->getClassMetadata(SettingEntity::class);
-
-            // Adjust table name based on the provided tableName
             $metadata->setPrimaryTable(['name' => $tableName]);
 
-            // Get the current driver type ..
             $params = $entityManager->getConnection()->getParams();
 
             if (!isset($params['driver'])) {
-                throw new \RuntimeException("Database driver not defined in connection params.");
+                throw new SettingsTableInitializationException('Database driver not defined in connection params.');
             }
 
-            $driver = $params['driver'];
-
-            // Early return if the settings table already exists 
-            switch ($driver) {
-                case 'pdo_mysql':
-                    $quoted = $entityManager->getConnection()->quote($tableName);
-                    $sql = "SHOW TABLES LIKE $quoted";
-                    break;
-
-                case 'pdo_sqlite':
-                    $quoted = $entityManager->getConnection()->quote($tableName);
-                    $sql = "SELECT name FROM sqlite_master WHERE type='table' AND name = $quoted";
-                    break;
-
-                default:
-                    throw new \RuntimeException("Unsupported DB driver: $driver");
-            }
-
-            if ($entityManager->getConnection()->fetchOne($sql)) {
+            if (self::tableExists($entityManager, $params['driver'], $tableName)) {
                 return false;
             }
 
-            // Create schema tool
             $schemaTool = new SchemaTool($entityManager);
-
-            // Create the schema for the table
             $schemaTool->createSchema([$metadata]);
 
             return true;
+        } catch (SettingsTableInitializationException $e) {
+            throw $e;
         } catch (Throwable $e) {
-            // Throw a custom exception in case of failure
-            throw new SettingsTableInitializationException("An error occurred during settings table initialization: {$e->getMessage()}");
+            throw new SettingsTableInitializationException(
+                "An error occurred during settings table initialization: {$e->getMessage()}",
+                previous: $e,
+            );
         }
+    }
+
+    /**
+     * Checks whether the given table already exists in the database.
+     *
+     * @throws SettingsTableInitializationException For unsupported drivers.
+     */
+    private static function tableExists(
+        EntityManagerInterface $entityManager,
+        string $driver,
+        string $tableName,
+    ): bool {
+        $connection = $entityManager->getConnection();
+        $quoted = $connection->quote($tableName);
+
+        $sql = match ($driver) {
+            'pdo_mysql'  => "SHOW TABLES LIKE $quoted",
+            'pdo_pgsql'  => "SELECT tablename FROM pg_tables WHERE tablename = $quoted",
+            'pdo_sqlite' => "SELECT name FROM sqlite_master WHERE type='table' AND name = $quoted",
+            default      => throw new SettingsTableInitializationException("Unsupported database driver: $driver"),
+        };
+
+        return (bool) $connection->fetchOne($sql);
     }
 }

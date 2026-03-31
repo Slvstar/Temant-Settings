@@ -8,19 +8,23 @@ use RuntimeException;
 use Throwable;
 
 /**
- * Exception thrown when a requested setting is not found in the settings storage.
+ * Thrown when a requested setting key does not exist in the database.
  */
-final class SettingNotFoundException extends RuntimeException implements Throwable
+final class SettingNotFoundException extends RuntimeException
 {
-    /**
-     * Constructor for SettingNotFoundException.
-     *
-     * @param string $message The error message. Defaults to 'SettingEntity not found.'.
-     * @param int $code The error code. Defaults to 0.
-     * @param Throwable|null $previous The previous throwable used for the exception chaining.
-     */
-    public function __construct(string $message = 'SettingEntity not found.', int $code = 0, ?Throwable $previous = null)
-    {
+    public function __construct(
+        string $message = 'Setting not found.',
+        int $code = 0,
+        ?Throwable $previous = null,
+    ) {
         parent::__construct($message, $code, $previous);
+    }
+
+    /**
+     * Named constructor for a missing key during a specific operation.
+     */
+    public static function forKey(string $key, string $operation = 'access'): self
+    {
+        return new self("Cannot $operation. No setting found with the key '$key'.");
     }
 }

@@ -8,19 +8,15 @@ use RuntimeException;
 use Throwable;
 
 /**
- * Exception thrown when the settings table initialization fails.
+ * Thrown when the database table for settings cannot be created or verified.
  */
-class SettingsTableInitializationException extends RuntimeException implements Throwable
+final class SettingsTableInitializationException extends RuntimeException
 {
-    /**
-     * Constructor for SettingsTableInitializationException.
-     *
-     * @param string $message The error message.
-     * @param int $code The error code.
-     * @param Throwable|null $previous The previous throwable for exception chaining.
-     */
-    public function __construct(string $message = "Failed to initialize the settings table.", int $code = 0, ?Throwable $previous = null)
-    {
+    public function __construct(
+        string $message = 'Failed to initialize the settings table.',
+        int $code = 0,
+        ?Throwable $previous = null,
+    ) {
         parent::__construct($message, $code, $previous);
     }
 }

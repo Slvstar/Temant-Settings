@@ -1,93 +1,272 @@
 
 # Temant Settings Manager
 
-![Build Status](https://github.com/Slvstar/Temant-Settings/actions/workflows/ci.yml/badge.svg) 
+![Build Status](https://github.com/Slvstar/Temant-Settings/actions/workflows/ci.yml/badge.svg)
 ![Coverage Status](https://codecov.io/gh/Slvstar/Temant-Settings/branch/main/graph/badge.svg)
 ![License](https://img.shields.io/github/license/Slvstar/Temant-Settings)
 ![PHPStan](https://img.shields.io/badge/PHPStan-level%20max-brightgreen)
+![PHP](https://img.shields.io/badge/PHP-8.5%2B-8892BF)
 
-A flexible settings management system for PHP applications, providing support for multiple data types and seamless integration with Doctrine ORM. It offers importing, exporting, and automatic type detection for settings.
+A modern, type-safe settings management library for PHP applications powered by Doctrine ORM.
+Persist key-value settings to any database with automatic type detection, in-memory caching, group organisation, bulk operations, and import/export.
 
 ## Features
 
-- **Multiple Data Types**: Supports `string`, `integer`, `boolean`, `float`, and `JSON` types.
-- **Import/Export**: Easily import/export settings in JSON or array format.
-- **Doctrine ORM Integration**: Manage settings with the power of Doctrine ORM.
-- **Automatic Type Detection**: Automatically detects the data type of settings.
-- **Highly Customizable**: Extend and modify functionality with ease.
+- **8 data types** — `string`, `integer`, `boolean`, `float`, `json`, `array`, `datetime`, and `auto` (auto-detect)
+- **In-memory cache** — subsequent reads for the same key skip the database
+- **Groups & descriptions** — organise settings logically and document them inline
+- **Bulk operations** — `setMany()`, `removeMany()`, `clear()`
+- **Search & filter** — substring search and group-based filtering
+- **Import / Export** — JSON and array formats, round-trip safe
+- **Fluent interface** — chain calls: `$manager->set(...)->set(...)->remove(...)`
+- **Countable** — `count($manager)` returns the total number of settings
+- **Doctrine ORM 3** — works with MySQL, PostgreSQL, and SQLite
+- **PHPStan max level** — fully statically analysed
+- **65 tests, 141 assertions** — comprehensive test suite
 
 ## Installation
 
-1. Install via Composer:
-    ```bash
-    composer require temant/settings-manager
-    ```
+```bash
+composer require temant/settings-manager
+```
 
-2. Ensure you have Doctrine ORM installed and configured properly in your project.
+Requires **PHP 8.5+** and **Doctrine ORM 3**.
 
-## Usage
-
-### Basic Setup
+## Quick Start
 
 ```php
 use Temant\SettingsManager\SettingsManager;
 use Temant\SettingsManager\Enum\SettingType;
-use Doctrine\ORM\EntityManagerInterface;
 
-// Create a SettingsManager instance with Doctrine EntityManager
-$settingsManager = new SettingsManager($entityManager);
+// Create a manager with your Doctrine EntityManager
+$manager = new SettingsManager($entityManager);
 
-// Add or update a setting
-$settingsManager->set('site_name', 'My Awesome Site', SettingType::STRING);
+// Set values — type is auto-detected
+$manager->set('site.name', 'Acme Corp');
+$manager->set('cache.ttl', 3600);
+$manager->set('debug', false);
 
-// Retrieve a setting
-$siteName = $settingsManager->get('site_name')->getValue();
-echo $siteName; // Outputs 'My Awesome Site'
+// Get typed values back
+$manager->getValue('site.name');   // 'Acme Corp' (string)
+$manager->getValue('cache.ttl');   // 3600 (int)
+$manager->getValue('debug');       // false (bool)
 
-// Remove a setting
-$settingsManager->remove('site_name');
+// Safe defaults for missing keys
+$manager->getOrDefault('ui.theme', 'dark'); // 'dark'
 ```
 
-### Importing and Exporting Settings
+## Usage Guide
 
-You can easily import or export settings in either array or JSON format.
-
-#### Export to JSON
+### Setting Values
 
 ```php
+use Temant\SettingsManager\Enum\SettingType;
+
+// Auto-detect type (default)
+$manager->set('key', 'value');
+$manager->set('count', 42);
+$manager->set('enabled', true);
+$manager->set('rate', 0.75);
+$manager->set('config', '{"nested": true}');    // detected as JSON
+$manager->set('tags', ['php', 'doctrine']);      // stored as ARRAY
+$manager->set('launch', new DateTimeImmutable()); // stored as DATETIME
+
+// Explicit type
+$manager->set('port', '8080', SettingType::STRING); // force string, not int
+
+// With metadata
+$manager->set(
+    name: 'smtp.host',
+    value: 'mail.example.com',
+    description: 'SMTP server hostname',
+    group: 'email',
+);
+
+// Prevent accidental overwrites
+$manager->set('api.key', 'secret', allowUpdate: false);
+// throws SettingAlreadyExistsException if 'api.key' exists
+```
+
+### Retrieving Values
+
+```php
+// Full entity (with metadata, timestamps, etc.)
+$entity = $manager->get('site.name');
+$entity->getValue();       // typed value
+$entity->getRawValue();    // raw string from DB
+$entity->getType();        // SettingType::STRING
+$entity->getDescription(); // ?string
+$entity->getGroup();       // ?string
+$entity->getCreatedAt();   // DateTimeImmutable
+$entity->getUpdatedAt();   // ?DateTimeImmutable
+
+// Shorthand — typed value directly
+$manager->getValue('site.name');              // 'Acme Corp'
+
+// With fallback
+$manager->getOrDefault('missing.key', 'default'); // 'default'
+
+// Existence check
+$manager->exists('site.name'); // true
+$manager->has('site.name');    // alias
+```
+
+### Updating Values
+
+```php
+use Temant\SettingsManager\Enum\UpdateType;
+
+// Update value and auto-detect new type
+$manager->update('cache.ttl', 7200);
+
+// Update value but keep the original type (validates compatibility)
+$manager->update('cache.ttl', 'not-an-int', UpdateType::KEEP_CURRENT);
+// throws SettingTypeMismatchException
+```
+
+### Removing Values
+
+```php
+$manager->remove('old.setting');
+
+// Remove multiple
+$manager->removeMany(['key1', 'key2', 'key3']);
+
+// Remove everything
+$manager->clear();
+```
+
+### Bulk Operations
+
+```php
+$manager->setMany([
+    'site.name'  => ['value' => 'Acme', 'type' => SettingType::STRING, 'group' => 'site'],
+    'site.url'   => ['value' => 'https://acme.dev', 'group' => 'site'],
+    'cache.ttl'  => ['value' => 3600, 'description' => 'Cache lifetime in seconds'],
+    'debug.mode' => ['value' => false],
+]);
+```
+
+### Search & Filter
+
+```php
+// Substring search (case-insensitive)
+$results = $manager->search('site');    // all settings with 'site' in the name
+
+// Group filtering
+$emailSettings = $manager->findByGroup('email');
+```
+
+### Counting
+
+```php
+$total = count($manager); // implements Countable
+```
+
+### Import & Export
+
+```php
+// Export all settings to array
+$data = $manager->export();
+
+// Export to JSON
+$json = $manager->exportJson();
+
+// Import from array
+$manager->import($data);
+
+// Import from JSON
+$manager->importJson($json);
+
+// Static utility classes also available
 use Temant\SettingsManager\Utils\SettingsExporter;
-
-$jsonData = SettingsExporter::toJson($settingsManager);
-echo $jsonData;
-```
-
-#### Import from JSON
-
-```php
 use Temant\SettingsManager\Utils\SettingsImporter;
 
-$jsonData = '{"site_name": {"name": "site_name", "value": "My Awesome Site", "type": "STRING"}}';
-SettingsImporter::fromJson($settingsManager, $jsonData);
+$json = SettingsExporter::toJson($manager);
+SettingsImporter::fromJson($manager, $json);
 ```
 
-## Running Tests
+### Default Settings
 
-Run the test suite using PHPUnit:
+Seed settings on first run — existing values are never overwritten:
+
+```php
+$manager = new SettingsManager($entityManager, 'settings', [
+    'site.name' => [
+        'value' => 'My App',
+        'type' => SettingType::STRING,
+        'description' => 'Application name',
+        'group' => 'site',
+    ],
+    'cache.ttl' => [
+        'value' => 3600,
+        // type auto-detected as INTEGER
+    ],
+    'debug' => [
+        'value' => false,
+    ],
+]);
+```
+
+### Custom Table Name
+
+```php
+$manager = new SettingsManager($entityManager, 'app_config');
+```
+
+### Cache Management
+
+The manager caches entities in memory. If you modify the settings table externally:
+
+```php
+$manager->clearCache();
+```
+
+## Data Types
+
+| SettingType | PHP Type            | Storage Format      | Example                |
+|-------------|---------------------|---------------------|------------------------|
+| `STRING`    | `string`            | As-is               | `'hello'`              |
+| `INTEGER`   | `int`               | String cast          | `42`                   |
+| `BOOLEAN`   | `bool`              | `'true'` / `'false'` | `true`                |
+| `FLOAT`     | `float`             | String cast          | `3.14`                 |
+| `JSON`      | `array` (assoc)     | JSON string          | `'{"key":"val"}'`      |
+| `ARRAY`     | `array`             | JSON encoded         | `['a', 'b']`           |
+| `DATETIME`  | `DateTimeImmutable` | ISO 8601             | `new DateTimeImmutable` |
+| `AUTO`      | *(detected)*        | *(varies)*           | *(any of the above)*   |
+
+## Exceptions
+
+| Exception                           | When                                         |
+|-------------------------------------|----------------------------------------------|
+| `SettingAlreadyExistsException`     | `set()` with `allowUpdate: false` on existing key |
+| `SettingNotFoundException`          | `update()` / `remove()` on missing key        |
+| `SettingTypeMismatchException`      | Value incompatible with expected type         |
+| `SettingsImportExportException`     | Import/export failure (bad JSON, missing keys) |
+| `SettingsTableInitializationException` | Database table creation failure             |
+
+## Running Tests
 
 ```bash
 composer test
 ```
 
-Perform static analysis with PHPStan:
+## Static Analysis
 
 ```bash
 composer phpstan
 ```
 
+## Run Both
+
+```bash
+composer check-all
+```
+
 ## Contributing
 
-We welcome contributions! Feel free to submit issues or pull requests. For major changes, please open an issue to discuss what you'd like to change.
+Contributions are welcome! Feel free to submit issues or pull requests.
 
 ## License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+[MIT](LICENSE)

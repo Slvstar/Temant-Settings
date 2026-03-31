@@ -1,6 +1,8 @@
 <?php
 
-namespace Tests\Unit\Temant\SettingsManager\Utils;
+declare(strict_types=1);
+
+namespace Temant\SettingsManager\Tests\Utils;
 
 use Doctrine\DBAL\DriverManager;
 use Doctrine\ORM\EntityManager;
@@ -16,7 +18,12 @@ final class TableInitializerTest extends TestCase
 
     protected function setUp(): void
     {
-        $config = ORMSetup::createAttributeMetadataConfiguration([__DIR__], true);
+        $config = ORMSetup::createAttributeMetadataConfiguration(
+            [dirname(__DIR__, 2) . '/Src'],
+            true,
+        );
+        $config->enableNativeLazyObjects(true);
+
         $connection = DriverManager::getConnection([
             'driver' => 'pdo_sqlite',
             'memory' => true,
@@ -25,17 +32,22 @@ final class TableInitializerTest extends TestCase
         $this->entityManager = new EntityManager($connection, $config);
     }
 
-    public function testCannotAddAnExistingTable(): void
+    public function testCreateTableReturnsTrueFirstTime(): void
     {
-        $tableName = 'settings';
-        $this->assertTrue(TableInitializer::init($this->entityManager, $tableName));
-        $this->assertFalse(TableInitializer::init($this->entityManager, $tableName));
+        $this->assertTrue(TableInitializer::init($this->entityManager, 'settings'));
+    }
+
+    public function testCreateTableReturnsFalseIfAlreadyExists(): void
+    {
+        TableInitializer::init($this->entityManager, 'settings');
+        $this->assertFalse(TableInitializer::init($this->entityManager, 'settings'));
     }
 
     public function testExceptionIsThrownOnInitializationFailure(): void
     {
         $this->expectException(SettingsTableInitializationException::class);
 
-        TableInitializer::init($this->entityManager, 1);
+        // Use an empty string which will cause a DB-level error during table creation
+        TableInitializer::init($this->entityManager, '');
     }
 }

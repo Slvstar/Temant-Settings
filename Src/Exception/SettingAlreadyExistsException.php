@@ -8,19 +8,24 @@ use RuntimeException;
 use Throwable;
 
 /**
- * Exception thrown when an attempt is made to create a setting that already exists.
+ * Thrown when attempting to create a setting that already exists
+ * while updates are explicitly disallowed.
  */
-final class SettingAlreadyExistsException extends RuntimeException implements Throwable
+final class SettingAlreadyExistsException extends RuntimeException
 {
-    /**
-     * Constructor for SettingAlreadyExistsException.
-     *
-     * @param string $message The error message. Defaults to 'SettingEntity already exists.'.
-     * @param int $code The error code. Defaults to 0.
-     * @param Throwable|null $previous The previous throwable used for the exception chaining.
-     */
-    public function __construct(string $message = 'SettingEntity already exists.', int $code = 0, ?Throwable $previous = null)
-    {
+    public function __construct(
+        string $message = 'Setting already exists.',
+        int $code = 0,
+        ?Throwable $previous = null,
+    ) {
         parent::__construct($message, $code, $previous);
+    }
+
+    /**
+     * Named constructor for convenience.
+     */
+    public static function forKey(string $key): self
+    {
+        return new self("A setting with the name '$key' already exists.");
     }
 }
