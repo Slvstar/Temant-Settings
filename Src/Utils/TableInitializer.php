@@ -31,11 +31,24 @@ final class TableInitializer
     public static function init(EntityManagerInterface $entityManager, string $tableName): bool
     {
         try {
-            // Exclude the settings table from Doctrine migration diffs.
-            $entityManager->getConfiguration()
-                ->setSchemaAssetsFilter(
-                    fn(string $name): bool => $name !== $tableName,
-                );
+            // Exclude the settings table from Doctrine's schema operations
+            // (migrations:diff, schema:update, schema:validate) so the host
+            // application does not drop or alter the table we manage ourselves.
+            // Preserve any existing filter the host application may have set.
+            $config = $entityManager->getConfiguration();
+            $existingFilter = $config->getSchemaAssetsFilter();
+
+            $config->setSchemaAssetsFilter(
+                static function (string $assetName) use ($tableName, $existingFilter): bool {
+                    // Hide our table from Doctrine's schema tooling.
+                    if ($assetName === $tableName) {
+                        return false;
+                    }
+
+                    // Delegate to any previously registered filter.
+                    return (bool) $existingFilter($assetName);
+                },
+            );
 
             $metadata = $entityManager->getClassMetadata(SettingEntity::class);
             $metadata->setPrimaryTable(['name' => $tableName]);
