@@ -42,15 +42,15 @@ class SettingEntity implements Stringable, Arrayable
     private ?string $description = null;
 
     /** Optional logical group for organizing related settings. */
-    #[Column(type: Types::STRING, length: 255, nullable: true)]
+    #[Column(name: "setting_group", type: Types::STRING, length: 255, nullable: true)]
     private ?string $settingGroup = null;
 
     /** Timestamp of initial creation — never changes after construction. */
-    #[Column(type: Types::DATETIME_IMMUTABLE)]
+    #[Column(name: "created_at", type: Types::DATETIME_IMMUTABLE)]
     private DateTimeImmutable $createdAt;
 
     /** Timestamp of the most recent modification, null until first update. */
-    #[Column(type: Types::DATETIME_IMMUTABLE, nullable: true)]
+    #[Column(name: "updated_at", type: Types::DATETIME_IMMUTABLE, nullable: true)]
     private ?DateTimeImmutable $updatedAt = null;
 
     /**
