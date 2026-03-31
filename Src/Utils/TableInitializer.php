@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace Temant\SettingsManager\Utils;
 
+use Doctrine\DBAL\Connection;
+use Doctrine\DBAL\Platforms\AbstractPlatform;
+use Doctrine\DBAL\Schema\AbstractSchemaManager;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\Tools\SchemaTool;
 use Temant\SettingsManager\Entity\SettingEntity;
@@ -11,15 +14,22 @@ use Temant\SettingsManager\Exception\SettingsTableInitializationException;
 use Throwable;
 
 /**
- * Creates the settings database table if it does not already exist.
+ * Creates and migrates the settings database table.
  *
  * Supports MySQL, PostgreSQL, and SQLite drivers. The table is excluded from
- * Doctrine's schema asset filter so that `doctrine:migrations:diff` ignores it.
+ * Doctrine's schema asset filter so that `doctrine:migrations:diff` and
+ * `doctrine:schema:update` do not drop or alter it.
  */
 final class TableInitializer
 {
+    /** Columns that may be missing on tables created by older library versions. */
+    private const array OPTIONAL_COLUMNS = [
+        'description'   => 'VARCHAR(500) DEFAULT NULL',
+        'setting_group' => 'VARCHAR(255) DEFAULT NULL',
+    ];
+
     /**
-     * Ensure the settings table exists, creating it when necessary.
+     * Ensure the settings table exists and is up-to-date, creating or migrating it when necessary.
      *
      * @param EntityManagerInterface $entityManager Active Doctrine entity manager.
      * @param string                 $tableName     Desired table name.
@@ -31,35 +41,15 @@ final class TableInitializer
     public static function init(EntityManagerInterface $entityManager, string $tableName): bool
     {
         try {
-            // Exclude the settings table from Doctrine's schema operations
-            // (migrations:diff, schema:update, schema:validate) so the host
-            // application does not drop or alter the table we manage ourselves.
-            // Preserve any existing filter the host application may have set.
-            $config = $entityManager->getConfiguration();
-            $existingFilter = $config->getSchemaAssetsFilter();
-
-            $config->setSchemaAssetsFilter(
-                static function (string $assetName) use ($tableName, $existingFilter): bool {
-                    // Hide our table from Doctrine's schema tooling.
-                    if ($assetName === $tableName) {
-                        return false;
-                    }
-
-                    // Delegate to any previously registered filter.
-                    return (bool) $existingFilter($assetName);
-                },
-            );
+            self::installSchemaAssetFilter($entityManager, $tableName);
 
             $metadata = $entityManager->getClassMetadata(SettingEntity::class);
             $metadata->setPrimaryTable(['name' => $tableName]);
 
-            $params = $entityManager->getConnection()->getParams();
+            $driver = self::getDriver($entityManager);
 
-            if (!isset($params['driver'])) {
-                throw new SettingsTableInitializationException('Database driver not defined in connection params.');
-            }
-
-            if (self::tableExists($entityManager, $params['driver'], $tableName)) {
+            if (self::tableExists($entityManager, $driver, $tableName)) {
+                self::migrateColumns($entityManager->getConnection(), $tableName);
                 return false;
             }
 
@@ -75,6 +65,82 @@ final class TableInitializer
                 previous: $e,
             );
         }
+    }
+
+    /**
+     * Install a schema asset filter that hides the settings table from Doctrine's
+     * schema tooling (`schema:update`, `migrations:diff`, `schema:validate`).
+     *
+     * Preserves any filter the host application has already registered.
+     */
+    private static function installSchemaAssetFilter(
+        EntityManagerInterface $entityManager,
+        string $tableName,
+    ): void {
+        $config = $entityManager->getConfiguration();
+        $existingFilter = $config->getSchemaAssetsFilter();
+
+        $config->setSchemaAssetsFilter(
+            static function (string $assetName) use ($tableName, $existingFilter): bool {
+                if ($assetName === $tableName) {
+                    return false;
+                }
+
+                return (bool) $existingFilter($assetName);
+            },
+        );
+    }
+
+    /**
+     * Add any columns that are missing from an existing table.
+     *
+     * This handles seamless upgrades from older library versions that did not
+     * have `description` or `setting_group` columns.
+     */
+    private static function migrateColumns(Connection $connection, string $tableName): void
+    {
+        $schemaManager = $connection->createSchemaManager();
+        $existingColumns = self::getColumnNames($schemaManager, $tableName);
+
+        foreach (self::OPTIONAL_COLUMNS as $column => $definition) {
+            if (!in_array($column, $existingColumns, true)) {
+                $connection->executeStatement(
+                    "ALTER TABLE {$connection->quoteIdentifier($tableName)} ADD {$connection->quoteIdentifier($column)} $definition",
+                );
+            }
+        }
+    }
+
+    /**
+     * Get the list of column names for a table (lowercased for case-insensitive comparison).
+     *
+     * @param AbstractSchemaManager<AbstractPlatform> $schemaManager
+     * @return string[]
+     */
+    private static function getColumnNames(AbstractSchemaManager $schemaManager, string $tableName): array
+    {
+        $columns = $schemaManager->listTableColumns($tableName);
+
+        return array_map(
+            static fn($col): string => strtolower($col->getName()),
+            $columns,
+        );
+    }
+
+    /**
+     * Resolve the database driver from the connection parameters.
+     *
+     * @throws SettingsTableInitializationException If no driver is configured.
+     */
+    private static function getDriver(EntityManagerInterface $entityManager): string
+    {
+        $params = $entityManager->getConnection()->getParams();
+
+        if (!isset($params['driver'])) {
+            throw new SettingsTableInitializationException('Database driver not defined in connection params.');
+        }
+
+        return $params['driver'];
     }
 
     /**
